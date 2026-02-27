@@ -167,27 +167,29 @@ const Tag = ({ label }) => (
 );
 
 // ─── Share Modal Component ───────────────────────────────────────
-const ShareModal = ({ cigar, onClose }) => {
+const ShareModal = ({ cigar, onClose, appUrl }) => {
   const [copied, setCopied] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(null);
   const avg = getAvgRating(cigar.ratings);
 
-  const shareText = `🔥 Just ${cigar.inHumidor === false ? "smoked" : "added to my humidor"}: ${cigar.name} by ${cigar.brand}${avg > 0 ? ` — Rated ${avg}/10 ⭐` : ""}${cigar.notes ? `\n\n"${cigar.notes.slice(0, 120)}${cigar.notes.length > 120 ? "..." : ""}"` : ""}\n\n📱 Shared via Cigar Lounge`;
+  // Build the deep link for this cigar
+  const cigarLink = appUrl || (typeof window !== "undefined" ? window.location.origin : "");
+
+  const shareText = `🔥 ${cigar.inHumidor === false ? "Just smoked" : "Check out"}: ${cigar.name} by ${cigar.brand}${avg > 0 ? `\n⭐ Rating: ${avg}/10` : ""}${cigar.wrapper ? `\n🍂 ${cigar.wrapper} wrapper • ${cigar.shape || ""}${cigar.strength ? " • " + cigar.strength : ""}` : ""}${cigar.notes ? `\n\n"${cigar.notes.slice(0, 100)}${cigar.notes.length > 100 ? "..." : ""}"` : ""}\n\n👉 See it on Cigar Lounge: ${cigarLink}\n📱 Download Cigar Lounge to rate and track your cigars!`;
 
   const handleShare = async (platform) => {
     const encodedText = encodeURIComponent(shareText);
+    const encodedUrl = encodeURIComponent(cigarLink);
     const urls = {
       twitter: `https://twitter.com/intent/tweet?text=${encodedText}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?quote=${encodedText}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodeURIComponent(shareText.split("\n👉")[0])}`,
       whatsapp: `https://wa.me/?text=${encodedText}`,
-      telegram: `https://t.me/share/url?text=${encodedText}`,
+      telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent(shareText.split("\n👉")[0])}`,
       sms: `sms:?body=${encodedText}`,
     };
 
     if (platform === "copy") {
-      try {
-        await navigator.clipboard.writeText(shareText);
-      } catch {}
+      try { await navigator.clipboard.writeText(shareText); } catch {}
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       return;
@@ -195,7 +197,19 @@ const ShareModal = ({ cigar, onClose }) => {
 
     if (platform === "native" && navigator.share) {
       try {
-        await navigator.share({ title: `${cigar.name} — Cigar Lounge`, text: shareText });
+        const shareData = { title: `${cigar.name} — Cigar Lounge`, text: shareText, url: cigarLink };
+        // If there's a photo, try to share it as a file
+        if (cigar.photo) {
+          try {
+            const response = await fetch(cigar.photo);
+            const blob = await response.blob();
+            const file = new File([blob], "cigar.jpg", { type: blob.type });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              shareData.files = [file];
+            }
+          } catch {}
+        }
+        await navigator.share(shareData);
         setShareSuccess("Shared!");
         setTimeout(() => setShareSuccess(null), 2000);
       } catch {}
@@ -232,26 +246,49 @@ const ShareModal = ({ cigar, onClose }) => {
 
         <div style={{
           background: "linear-gradient(135deg, #1e1a14, #16120d)",
-          border: "1px solid #2a2318", borderRadius: 12, padding: 14, marginBottom: 20,
+          border: "1px solid #2a2318", borderRadius: 12, overflow: "hidden", marginBottom: 20,
         }}>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            {cigar.photo ? (
-              <img src={cigar.photo} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }} />
-            ) : (
-              <div style={{ width: 48, height: 48, borderRadius: 8, background: "#2a2318", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🔥</div>
+          {/* Cigar photo banner */}
+          {cigar.photo && (
+            <div style={{ maxHeight: 140, overflow: "hidden" }}>
+              <img src={cigar.photo} alt="" style={{ width: "100%", objectFit: "cover", display: "block" }} />
+            </div>
+          )}
+          <div style={{ padding: 14 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              {!cigar.photo && (
+                <div style={{ width: 48, height: 48, borderRadius: 8, background: "#2a2318", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🔥</div>
+              )}
+              <div style={{ flex: 1 }}>
+                <p style={{ fontFamily: "'Playfair Display', serif", color: "#e8dcc8", fontSize: 15, margin: 0, fontWeight: 600 }}>{cigar.name}</p>
+                <p style={{ color: "#6b5e4f", fontSize: 12, margin: "2px 0 0", fontFamily: "'Cormorant Garamond', serif" }}>
+                  {cigar.brand}{avg > 0 ? ` • ⭐ ${avg}/10` : ""}
+                </p>
+              </div>
+            </div>
+            {cigar.wrapper && (
+              <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                {cigar.wrapper && <Tag label={cigar.wrapper} />}
+                {cigar.shape && <Tag label={cigar.shape} />}
+                {cigar.strength && <Tag label={cigar.strength} />}
+              </div>
             )}
-            <div style={{ flex: 1 }}>
-              <p style={{ fontFamily: "'Playfair Display', serif", color: "#e8dcc8", fontSize: 15, margin: 0, fontWeight: 600 }}>{cigar.name}</p>
-              <p style={{ color: "#6b5e4f", fontSize: 12, margin: "2px 0 0", fontFamily: "'Cormorant Garamond', serif" }}>
-                {cigar.brand}{avg > 0 ? ` • ${avg}/10` : ""}
+            {cigar.notes && (
+              <p style={{ color: "#8a7b69", fontSize: 12, fontStyle: "italic", margin: "10px 0 0", fontFamily: "'Cormorant Garamond', serif", lineHeight: 1.5 }}>
+                "{cigar.notes.slice(0, 100)}{cigar.notes.length > 100 ? "..." : ""}"
               </p>
+            )}
+            {/* App link preview */}
+            <div style={{
+              marginTop: 10, padding: "8px 10px", background: "#0f0c08",
+              borderRadius: 8, display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span style={{ fontSize: 14 }}>🔗</span>
+              <span style={{ color: "#D4A754", fontSize: 11, fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, opacity: 0.8 }}>
+                cigar-lounge-app.vercel.app
+              </span>
             </div>
           </div>
-          {cigar.notes && (
-            <p style={{ color: "#8a7b69", fontSize: 12, fontStyle: "italic", margin: "10px 0 0", fontFamily: "'Cormorant Garamond', serif", lineHeight: 1.5 }}>
-              "{cigar.notes.slice(0, 100)}{cigar.notes.length > 100 ? "..." : ""}"
-            </p>
-          )}
         </div>
 
         <h3 style={{ fontFamily: "'Playfair Display', serif", color: "#D4A754", fontSize: 16, margin: "0 0 14px" }}>Share to</h3>
@@ -780,7 +817,7 @@ const CigarDetail = ({ cigar, onClose, onEdit, onFavorite, onShare, isFavorite }
 };
 
 // ─── Friend Profile View ─────────────────────────────────────────
-const FriendProfile = ({ friend, friendCigars, onClose }) => (
+const FriendProfile = ({ friend, friendCigars, onClose, onRemove }) => (
   <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 200, overflowY: "auto", padding: "20px" }}>
     <div style={{ background: "#0f0c08", border: "1px solid #2a2318", borderRadius: 16, maxWidth: 500, margin: "auto", padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -819,6 +856,22 @@ const FriendProfile = ({ friend, friendCigars, onClose }) => (
           </div>
         ))}
       </div>
+      {/* Remove friend */}
+      <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #1e1a14" }}>
+        <button
+          onClick={() => { onRemove?.(friend.id); onClose(); }}
+          style={{
+            width: "100%", background: "transparent", border: "1px solid #3a2020",
+            borderRadius: 10, padding: 12, color: "#8a4a4a",
+            fontSize: 13, fontFamily: "'Cormorant Garamond', serif", fontWeight: 600,
+            cursor: "pointer", transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#2a1515"; e.currentTarget.style.borderColor = "#5a2a2a"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#3a2020"; }}
+        >
+          Remove Friend
+        </button>
+      </div>
     </div>
   </div>
 );
@@ -828,7 +881,7 @@ const FriendProfile = ({ friend, friendCigars, onClose }) => (
 // ═════════════════════════════════════════════════════════════════
 export default function CigarLounge() {
   // Persistent state with localStorage
-  const [activeTab, setActiveTab] = useState("humidor");
+  const [activeTab, setActiveTab] = useState("profile");
   const [cigars, setCigars] = useState(() => storage.get("cigars", null));
   const [favorites, setFavorites] = useState(() => new Set(storage.get("favorites", [])));
   const [friends, setFriends] = useState(() => storage.get("friends", SAMPLE_FRIENDS));
@@ -844,6 +897,7 @@ export default function CigarLounge() {
   const [friendSearch, setFriendSearch] = useState("");
   const [scanToast, setScanToast] = useState(null);
   const [initialized, setInitialized] = useState(false);
+  const profilePhotoRef = useRef(null);
 
   // Initialize with sample data on first ever load
   useEffect(() => {
@@ -920,11 +974,11 @@ export default function CigarLounge() {
   };
 
   const tabs = [
+    { id: "profile", label: "Profile", icon: "👤" },
     { id: "humidor", label: "Humidor", icon: "🗄️" },
     { id: "ratings", label: "Ratings", icon: "⭐" },
     { id: "favorites", label: "Favorites", icon: "❤️" },
     { id: "friends", label: "Friends", icon: "👥" },
-    { id: "profile", label: "Profile", icon: "👤" },
   ];
 
   return (
@@ -1071,7 +1125,43 @@ export default function CigarLounge() {
             <div style={{ padding: "20px" }}>
               <div style={{ background: "linear-gradient(135deg, #1e1a14, #16120d)", border: "1px solid #2a2318", borderRadius: 16, padding: 24, textAlign: "center", marginBottom: 20, position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 60, background: "linear-gradient(135deg, #2a2014, #1a1510)" }} />
-                <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #D4A754, #8B6914)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 28, color: "#0f0c08", fontWeight: 700, margin: "0 auto 12px", position: "relative", border: "3px solid #0f0c08" }}>{profile.avatar}</div>
+                {/* Profile photo with upload option */}
+                <div style={{ position: "relative", width: 80, height: 80, margin: "0 auto 12px" }}>
+                  <div
+                    onClick={() => !editProfile && profilePhotoRef.current?.click()}
+                    style={{
+                      width: 80, height: 80, borderRadius: "50%",
+                      background: profile.photo ? "none" : "linear-gradient(135deg, #D4A754, #8B6914)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: "'Playfair Display', serif", fontSize: 28, color: "#0f0c08", fontWeight: 700,
+                      position: "relative", border: "3px solid #0f0c08", cursor: "pointer",
+                      overflow: "hidden",
+                    }}>
+                    {profile.photo ? (
+                      <img src={profile.photo} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      profile.avatar
+                    )}
+                  </div>
+                  <div
+                    onClick={() => profilePhotoRef.current?.click()}
+                    style={{
+                      position: "absolute", bottom: -2, right: -2,
+                      width: 26, height: 26, borderRadius: "50%",
+                      background: "linear-gradient(135deg, #D4A754, #B8943F)",
+                      border: "2px solid #0f0c08",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", fontSize: 12,
+                    }}>📷</div>
+                  <input ref={profilePhotoRef} type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setProfile((p) => ({ ...p, photo: ev.target.result }));
+                      reader.readAsDataURL(file);
+                    }
+                  }} style={{ display: "none" }} />
+                </div>
                 {editProfile ? (
                   <div style={{ display: "grid", gap: 10, textAlign: "left" }}>
                     <input style={{ width: "100%", background: "#0f0c08", border: "1px solid #2a2318", borderRadius: 8, padding: "8px 12px", color: "#e8dcc8", fontSize: 14, fontFamily: "'Cormorant Garamond', serif", outline: "none", boxSizing: "border-box" }} value={profile.name} onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value, avatar: e.target.value.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "AF" }))} />
@@ -1087,23 +1177,48 @@ export default function CigarLounge() {
                   </>
                 )}
               </div>
+              {/* Clickable stat tiles */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
-                {[{ icon: "🗄️", label: "In Humidor", value: humidorCigars.length }, { icon: "🔥", label: "Smoked", value: cigarList.filter(c => !c.inHumidor).length }, { icon: "⭐", label: "Total Rated", value: allRated.length }, { icon: "❤️", label: "Favorites", value: favoriteCigars.length }].map((s) => (
-                  <div key={s.label} style={{ background: "#1a1510", border: "1px solid #2a2318", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                {[
+                  { icon: "🗄️", label: "In Humidor", value: humidorCigars.length, tab: "humidor" },
+                  { icon: "🔥", label: "Smoked", value: cigarList.filter(c => !c.inHumidor).length, tab: "ratings" },
+                  { icon: "⭐", label: "Total Rated", value: allRated.length, tab: "ratings" },
+                  { icon: "❤️", label: "Favorites", value: favoriteCigars.length, tab: "favorites" },
+                ].map((s) => (
+                  <div
+                    key={s.label}
+                    onClick={() => { setActiveTab(s.tab); setSearchQuery(""); }}
+                    style={{
+                      background: "#1a1510", border: "1px solid #2a2318", borderRadius: 10,
+                      padding: 14, textAlign: "center", cursor: "pointer", transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#D4A754"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2a2318"; e.currentTarget.style.transform = "translateY(0)"; }}
+                  >
                     <span style={{ fontSize: 22 }}>{s.icon}</span>
                     <p style={{ fontFamily: "'Playfair Display', serif", color: "#D4A754", fontSize: 24, margin: "4px 0 2px", fontWeight: 700 }}>{s.value}</p>
                     <p style={{ color: "#6b5e4f", fontSize: 10, margin: 0, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</p>
                   </div>
                 ))}
               </div>
+              {/* Clickable Top Rated cigars */}
               {allRated.length > 0 && (
                 <div style={{ background: "linear-gradient(135deg, #1e1a14, #16120d)", border: "1px solid #2a2318", borderRadius: 12, padding: 16 }}>
                   <h3 style={{ fontFamily: "'Playfair Display', serif", color: "#D4A754", fontSize: 15, margin: "0 0 12px" }}>🏆 Top Rated</h3>
                   {[...allRated].sort((a, b) => getAvgRating(b.ratings) - getAvgRating(a.ratings)).slice(0, 3).map((c, i) => (
-                    <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < 2 ? "1px solid #1e1a14" : "none" }}>
+                    <div
+                      key={c.id}
+                      onClick={() => setViewCigar(c)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "8px 0",
+                        borderBottom: i < 2 ? "1px solid #1e1a14" : "none",
+                        cursor: "pointer", transition: "all 0.15s",
+                      }}
+                    >
                       <span style={{ fontFamily: "'Playfair Display', serif", color: i === 0 ? "#D4A754" : "#6b5e4f", fontSize: 18, fontWeight: 700, minWidth: 24 }}>#{i + 1}</span>
                       <div style={{ flex: 1 }}><p style={{ color: "#e8dcc8", fontSize: 14, margin: 0, fontFamily: "'Playfair Display', serif" }}>{c.name}</p><p style={{ color: "#6b5e4f", fontSize: 12, margin: "2px 0 0" }}>{c.brand}</p></div>
                       <span style={{ fontFamily: "'Playfair Display', serif", color: "#D4A754", fontSize: 16, fontWeight: 700 }}>{getAvgRating(c.ratings)}</span>
+                      <span style={{ color: "#3a3228", fontSize: 14 }}>›</span>
                     </div>
                   ))}
                 </div>
@@ -1116,7 +1231,7 @@ export default function CigarLounge() {
       {/* Modals */}
       {(showAddModal || editCigar) && <CigarModal cigar={editCigar} mode={editCigar ? "edit" : "add"} onClose={() => { setShowAddModal(false); setEditCigar(null); }} onSave={handleAddCigar} />}
       {viewCigar && !editCigar && <CigarDetail cigar={viewCigar} onClose={() => setViewCigar(null)} onEdit={(c) => { setViewCigar(null); setEditCigar(c); }} onFavorite={handleToggleFavorite} onShare={(c) => { setViewCigar(null); setShareCigar(c); }} isFavorite={favorites.has(viewCigar.id)} />}
-      {viewFriend && <FriendProfile friend={viewFriend} friendCigars={friendCigarsForFriend(viewFriend)} onClose={() => setViewFriend(null)} />}
+      {viewFriend && <FriendProfile friend={viewFriend} friendCigars={friendCigarsForFriend(viewFriend)} onClose={() => setViewFriend(null)} onRemove={(id) => setFriends((prev) => prev.filter((f) => f.id !== id))} />}
       {showScanner && <BarcodeScanner onClose={() => setShowScanner(false)} onCigarFound={handleScannedCigar} />}
       {shareCigar && <ShareModal cigar={shareCigar} onClose={() => setShareCigar(null)} />}
 
