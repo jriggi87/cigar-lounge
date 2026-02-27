@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#0f0c08"/>
+  <rect x="8" y="8" width="84" height="84" rx="16" fill="none" stroke="#D4A754" stroke-width="2"/>
+  <g transform="translate(50,50)">
+    <!-- Cigar body -->
+    <rect x="-8" y="-30" width="16" height="50" rx="4" fill="#8B6914" opacity="0.9"/>
+    <rect x="-8" y="-30" width="16" height="12" rx="4" fill="#D4A754"/>
+    <!-- Band -->
+    <rect x="-10" y="-10" width="20" height="8" rx="2" fill="#D4A754"/>
+    <rect x="-8" y="-8" width="16" height="4" rx="1" fill="#0f0c08"/>
+    <!-- Smoke wisps -->
+    <path d="M-3,-32 Q-6,-38 -2,-44 Q2,-50 -1,-56" fill="none" stroke="#D4A754" stroke-width="1.5" opacity="0.4"/>
+    <path d="M3,-32 Q6,-38 2,-44 Q-2,-50 1,-56" fill="none" stroke="#D4A754" stroke-width="1.5" opacity="0.3"/>
+    <!-- Ash -->
+    <rect x="-7" y="18" width="14" height="4" rx="2" fill="#6b5e4f" opacity="0.6"/>
+  </g>
+  <!-- Stars at bottom -->
+  <g transform="translate(50,80)" fill="#D4A754" opacity="0.6">
+    <polygon points="0,-6 1.5,-2 6,-2 2.5,1 4,5 0,2.5 -4,5 -2.5,1 -6,-2 -1.5,-2" transform="translate(-16,0) scale(0.6)"/>
+    <polygon points="0,-6 1.5,-2 6,-2 2.5,1 4,5 0,2.5 -4,5 -2.5,1 -6,-2 -1.5,-2" transform="translate(-8,0) scale(0.6)"/>
+    <polygon points="0,-6 1.5,-2 6,-2 2.5,1 4,5 0,2.5 -4,5 -2.5,1 -6,-2 -1.5,-2" transform="translate(0,0) scale(0.7)" opacity="1"/>
+    <polygon points="0,-6 1.5,-2 6,-2 2.5,1 4,5 0,2.5 -4,5 -2.5,1 -6,-2 -1.5,-2" transform="translate(8,0) scale(0.6)"/>
+    <polygon points="0,-6 1.5,-2 6,-2 2.5,1 4,5 0,2.5 -4,5 -2.5,1 -6,-2 -1.5,-2" transform="translate(16,0) scale(0.6)"/>
+  </g>
+</svg>
