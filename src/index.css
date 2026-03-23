@@ -1,70 +1,12 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+body { background: #0f0c08; color: #e8dcc8; font-family: 'Cormorant Garamond', Georgia, serif; }
+#root { min-height: 100%; }
+html { overscroll-behavior: none; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+::-webkit-scrollbar { width: 0; background: transparent; }
+::selection { background: rgba(212, 167, 84, 0.3); color: #e8dcc8; }
+* { -webkit-tap-highlight-color: transparent; }
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #1a1510 inset; -webkit-text-fill-color: #e8dcc8;
 }
-
-html, body {
-  height: 100%;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  background: #0f0c08;
-  color: #e8dcc8;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-}
-
-#root {
-  min-height: 100%;
-}
-
-/* Prevent iOS bounce / overscroll */
-html {
-  overscroll-behavior: none;
-}
-
-/* Hide scrollbar but keep functionality */
-::-webkit-scrollbar {
-  width: 0;
-  background: transparent;
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Selection color */
-::selection {
-  background: rgba(212, 167, 84, 0.3);
-  color: #e8dcc8;
-}
-
-/* Tap highlight removal for mobile */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Input autofill styling */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-textarea:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0px 1000px #1a1510 inset;
-  -webkit-text-fill-color: #e8dcc8;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-/* Placeholder styling */
-::placeholder {
-  color: #4a4035;
-}
-
-/* Prevent text size adjust on orientation change */
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
+::placeholder { color: #4a4035; }
