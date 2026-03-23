@@ -21,14 +21,16 @@ const compressProfilePhoto=(dataUrl)=>new Promise(resolve=>{const img=new Image(
 
 // Image Crop Modal
 const ImageCropModal=({imageUrl,onSave,onClose,isProfile=false})=>{
-  const canvasRef=useRef(null);const[scale,setScale]=useState(1);const[offset,setOffset]=useState({x:0,y:0});const[dragging,setDragging]=useState(false);const[dragStart,setDragStart]=useState({x:0,y:0});const imgRef=useRef(null);const[saving,setSaving]=useState(false);
-  useEffect(()=>{const img=new Image();img.onload=()=>{imgRef.current=img;draw()};img.src=imageUrl},[imageUrl]);
+  const canvasRef=useRef(null);const[scale,setScale]=useState(0.1);const[offset,setOffset]=useState({x:0,y:0});const[dragging,setDragging]=useState(false);const[dragStart,setDragStart]=useState({x:0,y:0});const imgRef=useRef(null);const[saving,setSaving]=useState(false);const[initScale,setInitScale]=useState(0.1);
+  useEffect(()=>{const img=new Image();img.onload=()=>{imgRef.current=img;const sz=280;const ch=isProfile?sz:sz*0.75;const fitScale=Math.min(sz/img.width,ch/img.height);setScale(fitScale);setInitScale(fitScale);setOffset({x:0,y:0})};img.src=imageUrl},[imageUrl]);
   useEffect(()=>{if(imgRef.current)draw()},[scale,offset]);
   const draw=()=>{const cv=canvasRef.current;if(!cv||!imgRef.current)return;const ctx=cv.getContext("2d");const sz=280;cv.width=sz;cv.height=isProfile?sz:sz*0.75;ctx.fillStyle="#0f0c08";ctx.fillRect(0,0,cv.width,cv.height);const img=imgRef.current,iw=img.width*scale,ih=img.height*scale;ctx.drawImage(img,(cv.width-iw)/2+offset.x,(cv.height-ih)/2+offset.y,iw,ih)};
   const pDown=e=>{setDragging(true);const p=e.touches?e.touches[0]:e;setDragStart({x:p.clientX-offset.x,y:p.clientY-offset.y})};
   const pMove=e=>{if(!dragging)return;const p=e.touches?e.touches[0]:e;setOffset({x:p.clientX-dragStart.x,y:p.clientY-dragStart.y})};
   const pUp=()=>setDragging(false);
   const save=async()=>{setSaving(true);const r=canvasRef.current.toDataURL("image/jpeg",isProfile?0.7:0.6);await onSave(r);setSaving(false)};
+  const useFullPhoto=async()=>{setSaving(true);await onSave(imageUrl);setSaving(false)};
+  const minZoom=Math.max(0.02,initScale*0.5);const maxZoom=Math.max(initScale*4,1);
   return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:350,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
     <h3 style={{fontFamily:"'Playfair Display',serif",color:"#D4A754",fontSize:18,margin:"0 0 16px"}}>{isProfile?"Adjust Profile Photo":"Adjust Photo"}</h3>
     <div style={{borderRadius:isProfile?"50%":12,overflow:"hidden",border:"2px solid #D4A754",marginBottom:16,touchAction:"none"}}>
@@ -36,12 +38,15 @@ const ImageCropModal=({imageUrl,onSave,onClose,isProfile=false})=>{
     </div>
     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,width:280}}>
       <span style={{color:"#6b5e4f",fontSize:12}}>−</span>
-      <input type="range" min="0.3" max="3" step="0.05" value={scale} onChange={e=>setScale(parseFloat(e.target.value))} style={{flex:1,accentColor:"#D4A754"}}/>
+      <input type="range" min={minZoom} max={maxZoom} step={initScale*0.02||0.01} value={scale} onChange={e=>setScale(parseFloat(e.target.value))} style={{flex:1,accentColor:"#D4A754"}}/>
       <span style={{color:"#6b5e4f",fontSize:12}}>+</span>
     </div>
-    <div style={{display:"flex",gap:10,width:280}}>
-      <button onClick={onClose} style={{flex:1,background:"transparent",border:"1px solid #2a2318",borderRadius:10,padding:12,color:"#6b5e4f",fontSize:14,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-      <button onClick={save} disabled={saving} style={{flex:1,background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:10,padding:12,color:"#0f0c08",fontSize:14,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?0.7:1}}>{saving?"Saving...":"Use Photo"}</button>
+    <div style={{display:"grid",gap:8,width:280}}>
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={onClose} style={{flex:1,background:"transparent",border:"1px solid #2a2318",borderRadius:10,padding:12,color:"#6b5e4f",fontSize:14,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+        <button onClick={save} disabled={saving} style={{flex:1,background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:10,padding:12,color:"#0f0c08",fontSize:14,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?0.7:1}}>{saving?"Saving...":"Use Crop"}</button>
+      </div>
+      <button onClick={useFullPhoto} disabled={saving} style={{width:"100%",background:"transparent",border:"1px solid #2a2318",borderRadius:10,padding:10,color:"#8a7b69",fontSize:13,fontWeight:600,cursor:saving?"wait":"pointer"}}>Use Full Photo</button>
     </div>
   </div>);
 };
