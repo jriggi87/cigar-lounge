@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { auth } from "./firebase";
 import { signOut } from "firebase/auth";
 import { saveCigar, onCigars, setFavorites as saveFavoritesToDb, onFavorites, onUserProfile, updateUserProfile, searchUsers, addFriend, removeFriend as removeFriendDb, getFriendProfiles, getFriendCigars } from "./database";
-import CIGAR_DATA from "./cigarDatabase";
+import CIGAR_DATA, { CIGAR_BRANDS } from "./cigarDatabase";
 
 const RATING_CATEGORIES = [
   { key: "appearance", label: "Appearance", icon: "👁️" },{ key: "construction", label: "Construction", icon: "🔧" },{ key: "preLight", label: "Pre-Light Draw", icon: "💨" },{ key: "firstThird", label: "First Third", icon: "1️⃣" },{ key: "secondThird", label: "Second Third", icon: "2️⃣" },{ key: "finalThird", label: "Final Third", icon: "3️⃣" },{ key: "burnLine", label: "Burn & Ash", icon: "🔥" },{ key: "flavor", label: "Flavor Profile", icon: "🍂" },{ key: "strength", label: "Strength", icon: "💪" },{ key: "overall", label: "Overall Experience", icon: "⭐" },
@@ -139,7 +139,17 @@ return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zInde
     <div onClick={()=>setShowSuggestions(false)} style={{padding:"8px 14px",textAlign:"center",cursor:"pointer",color:"#D4A754",fontSize:12,fontWeight:600,borderTop:"1px solid #2a2318"}}>Not listed? Keep typing to add manually</div>
   </div>}
 </div>
-<div><label style={lS}>Brand</label><input style={iS} value={form.brand} onChange={e=>setForm(f=>({...f,brand:e.target.value}))} placeholder="e.g. Padrón"/></div>
+<div style={{position:"relative"}}>
+  <label style={lS}>Brand</label>
+  <input style={iS} value={form.brand} onChange={e=>{const val=e.target.value;setForm(f=>({...f,brand:val}));if(val.length>=1&&mode!=="edit"){const q=val.toLowerCase();const brandMatches=CIGAR_DATA.filter(c=>c.brand.toLowerCase().includes(q)).slice(0,8);setSuggestions(brandMatches);setShowSuggestions(brandMatches.length>0)}else{setSuggestions([]);setShowSuggestions(false)}}} onFocus={()=>{if(form.brand.length>=1&&mode!=="edit"){const q=form.brand.toLowerCase();const m=CIGAR_DATA.filter(c=>c.brand.toLowerCase().includes(q)).slice(0,8);setSuggestions(m);setShowSuggestions(m.length>0)}}} placeholder="e.g. Padrón" autoComplete="off"/>
+  {showSuggestions&&suggestions.length>0&&!form.name&&<div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:10,background:"#1a1510",border:"1px solid #D4A754",borderRadius:"0 0 10px 10px",maxHeight:240,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,0.6)"}}>
+    {suggestions.map((c,i)=><div key={i} onClick={()=>handleSelectSuggestion(c)} style={{padding:"10px 14px",borderBottom:"1px solid #2a2318",cursor:"pointer"}} onMouseEnter={e=>e.currentTarget.style.background="#2a2318"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+      <p style={{color:"#e8dcc8",fontSize:14,margin:0,fontWeight:600}}>{c.name}</p>
+      <p style={{color:"#6b5e4f",fontSize:11,margin:"2px 0 0"}}>{c.brand} • {c.wrapper} • {c.shape}</p>
+    </div>)}
+    <div onClick={()=>setShowSuggestions(false)} style={{padding:"8px 14px",textAlign:"center",cursor:"pointer",color:"#D4A754",fontSize:12,fontWeight:600,borderTop:"1px solid #2a2318"}}>Dismiss</div>
+  </div>}
+</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}><div><label style={lS}>Wrapper</label><select style={iS} value={form.wrapper} onChange={e=>setForm(f=>({...f,wrapper:e.target.value}))}><option value="">Select...</option>{WRAPPER_TYPES.map(w=><option key={w}>{w}</option>)}</select></div><div><label style={lS}>Shape</label><select style={iS} value={form.shape} onChange={e=>setForm(f=>({...f,shape:e.target.value}))}><option value="">Select...</option>{SHAPES.map(s=><option key={s}>{s}</option>)}</select></div></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}><div><label style={lS}>Strength</label><select style={iS} value={form.strength} onChange={e=>setForm(f=>({...f,strength:e.target.value}))}><option value="">Select...</option>{STRENGTH_LEVELS.map(s=><option key={s}>{s}</option>)}</select></div><div><label style={lS}>Ring Gauge</label><input style={iS} type="number" value={form.ringGauge} onChange={e=>setForm(f=>({...f,ringGauge:e.target.value}))} placeholder="52"/></div><div><label style={lS}>Length</label><input style={iS} value={form.length} onChange={e=>setForm(f=>({...f,length:e.target.value}))} placeholder='6"'/></div></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}><div><label style={lS}>Origin</label><input style={iS} value={form.origin} onChange={e=>setForm(f=>({...f,origin:e.target.value}))} placeholder="Nicaragua"/></div><div><label style={lS}>Price ($)</label><input style={iS} type="number" step="0.01" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))} placeholder="15.00"/></div></div>
