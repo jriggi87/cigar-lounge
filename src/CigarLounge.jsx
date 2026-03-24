@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { auth } from "./firebase";
 import { signOut } from "firebase/auth";
 import { saveCigar, onCigars, setFavorites as saveFavoritesToDb, onFavorites, onUserProfile, updateUserProfile, searchUsers, addFriend, removeFriend as removeFriendDb, getFriendProfiles, getFriendCigars } from "./database";
+import CIGAR_DATA from "./cigarDatabase";
 
 const RATING_CATEGORIES = [
   { key: "appearance", label: "Appearance", icon: "👁️" },{ key: "construction", label: "Construction", icon: "🔧" },{ key: "preLight", label: "Pre-Light Draw", icon: "💨" },{ key: "firstThird", label: "First Third", icon: "1️⃣" },{ key: "secondThird", label: "Second Third", icon: "2️⃣" },{ key: "finalThird", label: "Final Third", icon: "3️⃣" },{ key: "burnLine", label: "Burn & Ash", icon: "🔥" },{ key: "flavor", label: "Flavor Profile", icon: "🍂" },{ key: "strength", label: "Strength", icon: "💪" },{ key: "overall", label: "Overall Experience", icon: "⭐" },
@@ -95,10 +96,27 @@ const CigarCard=({cigar,onTap,onFavorite,onSmoke,onShare,showSmoke,isFavorite})=
 {cigar.photo&&<div style={{marginTop:10,borderRadius:8,overflow:"hidden",maxHeight:120}}><img src={cigar.photo} alt="" style={{width:"100%",objectFit:"cover",borderRadius:8}}/></div>}
 </div>)};
 
-// Cigar Modal with loading state, error handling, image crop
+// Cigar Modal with autocomplete, loading state, error handling, image crop
 const CigarModal=({cigar,onClose,onSave,mode="add"})=>{
 const[form,setForm]=useState({name:cigar?.name||"",brand:cigar?.brand||"",wrapper:cigar?.wrapper||"",shape:cigar?.shape||"",strength:cigar?.strength||"",ringGauge:cigar?.ringGauge||"",length:cigar?.length||"",origin:cigar?.origin||"",price:cigar?.price||"",notes:cigar?.notes||"",photo:cigar?.photo||null,ratings:cigar?.ratings||{},inHumidor:cigar?.inHumidor??true});
 const[saving,setSaving]=useState(false);const[error,setError]=useState(null);const[cropImage,setCropImage]=useState(null);const fileRef=useRef();
+const[suggestions,setSuggestions]=useState([]);const[showSuggestions,setShowSuggestions]=useState(false);const sugRef=useRef(null);
+
+const handleNameChange=(val)=>{
+  setForm(f=>({...f,name:val}));
+  if(val.length>=2&&mode!=="edit"){
+    const q=val.toLowerCase();
+    const matches=CIGAR_DATA.filter(c=>c.name.toLowerCase().includes(q)||c.brand.toLowerCase().includes(q)).slice(0,8);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length>0);
+  }else{setSuggestions([]);setShowSuggestions(false)}
+};
+
+const handleSelectSuggestion=(c)=>{
+  setForm(f=>({...f,name:c.name,brand:c.brand,wrapper:c.wrapper,shape:c.shape,strength:c.strength,ringGauge:c.ringGauge,length:c.length,origin:c.origin,price:c.price}));
+  setShowSuggestions(false);setSuggestions([]);
+};
+
 const handlePhoto=e=>{const f=e.target.files[0];if(f){const r=new FileReader();r.onload=ev=>setCropImage(ev.target.result);r.readAsDataURL(f)}};
 const handleCropSave=async url=>{const compressed=await compressImage(url,600,0.5);setForm(f=>({...f,photo:compressed}));setCropImage(null)};
 const handleSave=async()=>{if(!form.name.trim()||saving)return;setSaving(true);setError(null);try{await onSave({...form,id:cigar?.id||generateId()})}catch(err){console.error("Save error:",err);setError("Failed to save. Try removing the photo or try again.");setSaving(false)}};
@@ -109,7 +127,18 @@ return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zInde
 <div onClick={()=>!saving&&fileRef.current?.click()} style={{border:"2px dashed #2a2318",borderRadius:12,padding:form.photo?0:30,textAlign:"center",cursor:"pointer",marginBottom:20,overflow:"hidden",background:"#1a1510"}}>{form.photo?<img src={form.photo} alt="" style={{width:"100%",maxHeight:200,objectFit:"cover"}}/>:<div><span style={{fontSize:32}}>📷</span><p style={{color:"#6b5e4f",margin:"8px 0 0",fontSize:13}}>Tap to add photo</p></div>}</div>
 <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} style={{display:"none"}}/>
 <div style={{display:"grid",gap:12,marginBottom:20}}>
-<div><label style={lS}>Cigar Name *</label><input style={iS} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="e.g. Padrón 1964"/></div>
+{/* Cigar name with autocomplete */}
+<div style={{position:"relative"}}>
+  <label style={lS}>Cigar Name *</label>
+  <input style={iS} value={form.name} onChange={e=>handleNameChange(e.target.value)} onFocus={()=>{if(suggestions.length>0)setShowSuggestions(true)}} placeholder="Start typing to search 250+ cigars..." autoComplete="off"/>
+  {showSuggestions&&suggestions.length>0&&<div ref={sugRef} style={{position:"absolute",top:"100%",left:0,right:0,zIndex:10,background:"#1a1510",border:"1px solid #D4A754",borderRadius:"0 0 10px 10px",maxHeight:240,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,0.6)"}}>
+    {suggestions.map((c,i)=><div key={i} onClick={()=>handleSelectSuggestion(c)} style={{padding:"10px 14px",borderBottom:"1px solid #2a2318",cursor:"pointer",transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="#2a2318"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+      <p style={{color:"#e8dcc8",fontSize:14,margin:0,fontWeight:600}}>{c.name}</p>
+      <p style={{color:"#6b5e4f",fontSize:11,margin:"2px 0 0"}}>{c.brand} • {c.wrapper} • {c.shape} • {c.strength}</p>
+    </div>)}
+    <div onClick={()=>setShowSuggestions(false)} style={{padding:"8px 14px",textAlign:"center",cursor:"pointer",color:"#D4A754",fontSize:12,fontWeight:600,borderTop:"1px solid #2a2318"}}>Not listed? Keep typing to add manually</div>
+  </div>}
+</div>
 <div><label style={lS}>Brand</label><input style={iS} value={form.brand} onChange={e=>setForm(f=>({...f,brand:e.target.value}))} placeholder="e.g. Padrón"/></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}><div><label style={lS}>Wrapper</label><select style={iS} value={form.wrapper} onChange={e=>setForm(f=>({...f,wrapper:e.target.value}))}><option value="">Select...</option>{WRAPPER_TYPES.map(w=><option key={w}>{w}</option>)}</select></div><div><label style={lS}>Shape</label><select style={iS} value={form.shape} onChange={e=>setForm(f=>({...f,shape:e.target.value}))}><option value="">Select...</option>{SHAPES.map(s=><option key={s}>{s}</option>)}</select></div></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}><div><label style={lS}>Strength</label><select style={iS} value={form.strength} onChange={e=>setForm(f=>({...f,strength:e.target.value}))}><option value="">Select...</option>{STRENGTH_LEVELS.map(s=><option key={s}>{s}</option>)}</select></div><div><label style={lS}>Ring Gauge</label><input style={iS} type="number" value={form.ringGauge} onChange={e=>setForm(f=>({...f,ringGauge:e.target.value}))} placeholder="52"/></div><div><label style={lS}>Length</label><input style={iS} value={form.length} onChange={e=>setForm(f=>({...f,length:e.target.value}))} placeholder='6"'/></div></div>
