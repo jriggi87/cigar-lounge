@@ -2,7 +2,8 @@ import { db } from "./firebase";
 import {
   doc, setDoc, getDoc, updateDoc, deleteDoc,
   collection, query, where, getDocs, onSnapshot,
-  arrayUnion, arrayRemove, serverTimestamp
+  arrayUnion, arrayRemove, serverTimestamp, orderBy, limit,
+  addDoc, Timestamp
 } from "firebase/firestore";
 
 // ─── User Profile ────────────────────────────────────────────────
@@ -15,6 +16,8 @@ export async function createUserProfile(uid, data) {
     email: data.email || "",
     joinDate: new Date().getFullYear().toString(),
     friends: [],
+    friendRequestsIn: [],   // UIDs of people who want to be your friend
+    friendRequestsOut: [],  // UIDs of people you've sent requests to
     createdAt: serverTimestamp(),
   });
 }
@@ -51,16 +54,14 @@ export function onCigars(uid, callback) {
   const q = collection(db, "users", uid, "cigars");
   return onSnapshot(q, (snap) => {
     const cigars = [];
-    snap.forEach((doc) => cigars.push({ id: doc.id, ...doc.data() }));
+    snap.forEach((d) => cigars.push({ id: d.id, ...d.data() }));
     callback(cigars);
   });
 }
 
 // ─── Favorites ───────────────────────────────────────────────────
 export async function setFavorites(uid, favoriteIds) {
-  await setDoc(doc(db, "users", uid, "meta", "favorites"), {
-    ids: favoriteIds,
-  });
+  await setDoc(doc(db, "users", uid, "meta", "favorites"), { ids: favoriteIds });
 }
 
 export function onFavorites(uid, callback) {
@@ -69,17 +70,56 @@ export function onFavorites(uid, callback) {
   });
 }
 
+// ─── Friend Requests ─────────────────────────────────────────────
+export async function sendFriendRequest(fromUid, toUid) {
+  // Add to sender's outgoing requests
+  await updateDoc(doc(db, "users", fromUid), {
+    friendRequestsOut: arrayUnion(toUid),
+  });
+  // Add to receiver's incoming requests
+  await updateDoc(doc(db, "users", toUid), {
+    friendRequestsIn: arrayUnion(fromUid),
+  });
+}
+
+export async function acceptFriendRequest(uid, requesterUid) {
+  // Add each other as friends
+  await updateDoc(doc(db, "users", uid), {
+    friends: arrayUnion(requesterUid),
+    friendRequestsIn: arrayRemove(requesterUid),
+  });
+  await updateDoc(doc(db, "users", requesterUid), {
+    friends: arrayUnion(uid),
+    friendRequestsOut: arrayRemove(uid),
+  });
+}
+
+export async function declineFriendRequest(uid, requesterUid) {
+  // Remove from both request lists
+  await updateDoc(doc(db, "users", uid), {
+    friendRequestsIn: arrayRemove(requesterUid),
+  });
+  await updateDoc(doc(db, "users", requesterUid), {
+    friendRequestsOut: arrayRemove(uid),
+  });
+}
+
+export async function cancelFriendRequest(uid, targetUid) {
+  await updateDoc(doc(db, "users", uid), {
+    friendRequestsOut: arrayRemove(targetUid),
+  });
+  await updateDoc(doc(db, "users", targetUid), {
+    friendRequestsIn: arrayRemove(uid),
+  });
+}
+
 // ─── Friends ─────────────────────────────────────────────────────
 export async function searchUsers(searchTerm) {
-  // Search by email or name
   const results = [];
-  
-  // Search by email (exact match)
   const emailQ = query(collection(db, "users"), where("email", "==", searchTerm.toLowerCase()));
   const emailSnap = await getDocs(emailQ);
-  emailSnap.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
+  emailSnap.forEach((d) => results.push({ id: d.id, ...d.data() }));
   
-  // If no email match, search by name prefix
   if (results.length === 0) {
     const nameQ = query(collection(db, "users"));
     const nameSnap = await getDocs(nameQ);
@@ -90,36 +130,19 @@ export async function searchUsers(searchTerm) {
       }
     });
   }
-  
   return results;
 }
 
-export async function addFriend(uid, friendUid) {
-  await updateDoc(doc(db, "users", uid), {
-    friends: arrayUnion(friendUid),
-  });
-  // Also add reverse friendship
-  await updateDoc(doc(db, "users", friendUid), {
-    friends: arrayUnion(uid),
-  });
-}
-
 export async function removeFriend(uid, friendUid) {
-  await updateDoc(doc(db, "users", uid), {
-    friends: arrayRemove(friendUid),
-  });
-  await updateDoc(doc(db, "users", friendUid), {
-    friends: arrayRemove(uid),
-  });
+  await updateDoc(doc(db, "users", uid), { friends: arrayRemove(friendUid) });
+  await updateDoc(doc(db, "users", friendUid), { friends: arrayRemove(uid) });
 }
 
 export async function getFriendProfiles(friendIds) {
   const profiles = [];
   for (const fid of friendIds) {
     const snap = await getDoc(doc(db, "users", fid));
-    if (snap.exists()) {
-      profiles.push({ id: snap.id, ...snap.data() });
-    }
+    if (snap.exists()) profiles.push({ id: snap.id, ...snap.data() });
   }
   return profiles;
 }
@@ -130,4 +153,62 @@ export async function getFriendCigars(friendUid) {
   const cigars = [];
   snap.forEach((d) => cigars.push({ id: d.id, ...d.data() }));
   return cigars;
+}
+
+export async function getFriendFavorites(friendUid) {
+  try {
+    const snap = await getDoc(doc(db, "users", friendUid, "meta", "favorites"));
+    return snap.exists() ? new Set(snap.data().ids || []) : new Set();
+  } catch { return new Set(); }
+}
+
+// ─── Activity Feed ───────────────────────────────────────────────
+// Activity types: "smoke", "add_humidor", "rate", "favorite"
+export async function postActivity(uid, activity) {
+  await addDoc(collection(db, "users", uid, "activity"), {
+    ...activity,
+    timestamp: serverTimestamp(),
+  });
+}
+
+export async function getUserActivity(uid, maxItems = 20) {
+  try {
+    const q = query(
+      collection(db, "users", uid, "activity"),
+      orderBy("timestamp", "desc"),
+      limit(maxItems)
+    );
+    const snap = await getDocs(q);
+    const items = [];
+    snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+export async function getFriendsFeed(friendIds, maxPerFriend = 10) {
+  const allActivity = [];
+  for (const fid of friendIds) {
+    try {
+      const profile = await getUserProfile(fid);
+      const activity = await getUserActivity(fid, maxPerFriend);
+      activity.forEach(a => {
+        allActivity.push({
+          ...a,
+          userId: fid,
+          userName: profile?.name || "Unknown",
+          userAvatar: profile?.avatar || "??",
+          userPhoto: profile?.photo || null,
+        });
+      });
+    } catch {}
+  }
+  // Sort by timestamp descending
+  allActivity.sort((a, b) => {
+    const ta = a.timestamp?.seconds || 0;
+    const tb = b.timestamp?.seconds || 0;
+    return tb - ta;
+  });
+  return allActivity.slice(0, 30);
 }
