@@ -188,10 +188,15 @@ const CigarDetail=({cigar,onClose,onEdit,onFavorite,onShare,isFavorite})=>{const
 export default function CigarLounge({user}){
 const[activeTab,setActiveTab]=useState("profile");const[profile,setProfile]=useState(null);const[cigars,setCigars]=useState([]);const[favorites,setFavoritesState]=useState(new Set());const[friendProfiles,setFriendProfiles]=useState([]);const[showAddModal,setShowAddModal]=useState(false);const[showScanner,setShowScanner]=useState(false);const[shareCigar,setShareCigar]=useState(null);const[editCigar,setEditCigar]=useState(null);const[viewCigar,setViewCigar]=useState(null);const[viewFriend,setViewFriend]=useState(null);const[viewFriendCigars,setViewFriendCigars]=useState([]);
 const[viewFriendActivity,setViewFriendActivity]=useState([]);
-const[pendingProfiles,setPendingProfiles]=useState([]);const[searchQuery,setSearchQuery]=useState("");const[editProfile,setEditProfile]=useState(false);const[friendSearch,setFriendSearch]=useState("");const[friendSearchResults,setFriendSearchResults]=useState([]);const[friendSearching,setFriendSearching]=useState(false);const[scanToast,setScanToast]=useState(null);const[loading,setLoading]=useState(true);const[cropProfileImage,setCropProfileImage]=useState(null);const profilePhotoRef=useRef(null);const uid=user.uid;
+const[viewFriendFavs,setViewFriendFavs]=useState(new Set());
+const[pendingProfiles,setPendingProfiles]=useState([]);const[searchQuery,setSearchQuery]=useState("");const[editProfile,setEditProfile]=useState(false);const[friendSearch,setFriendSearch]=useState("");const[friendSearchResults,setFriendSearchResults]=useState([]);const[friendSearching,setFriendSearching]=useState(false);const[scanToast,setScanToast]=useState(null);const[loading,setLoading]=useState(true);const[cropProfileImage,setCropProfileImage]=useState(null);
+const[myActivity,setMyActivity]=useState([]);
+const[friendViewTab,setFriendViewTab]=useState("overview");const profilePhotoRef=useRef(null);const uid=user.uid;
 
 useEffect(()=>{const u=[];u.push(onUserProfile(uid,p=>{setProfile(p);setLoading(false)}));u.push(onCigars(uid,setCigars));u.push(onFavorites(uid,setFavoritesState));return()=>u.forEach(x=>x())},[uid]);
 useEffect(()=>{if(profile?.friends?.length>0)getFriendProfiles(profile.friends).then(setFriendProfiles);else setFriendProfiles([])},[profile?.friends]);
+// Load own activity
+useEffect(()=>{getUserActivity(uid,15).then(setMyActivity).catch(()=>setMyActivity([]))},[cigars]);
 
 const humidorCigars=cigars.filter(c=>c.inHumidor);const allRated=cigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0);const favoriteCigars=cigars.filter(c=>favorites.has(c.id));
 
@@ -202,7 +207,7 @@ const handleToggleFavorite=async id=>{const n=new Set(favorites);n.has(id)?n.del
 const handleSearchFriends=async()=>{if(!friendSearch.trim())return;setFriendSearching(true);try{const r=await searchUsers(friendSearch.trim());setFriendSearchResults(r.filter(x=>x.id!==uid))}catch{setFriendSearchResults([])}setFriendSearching(false)};
 const handleAddFriend=async fid=>{try{await sendFriendRequest(uid,fid);setFriendSearch("");setFriendSearchResults([]);setScanToast("Friend request sent!");setTimeout(()=>setScanToast(null),3000)}catch{}};
 const handleRemoveFriend=async fid=>{try{await removeFriendDb(uid,fid)}catch{}};
-const handleViewFriend=async f=>{setViewFriend(f);try{setViewFriendCigars(await getFriendCigars(f.id));setViewFriendActivity(await getUserActivity(f.id,15))}catch{setViewFriendCigars([]);setViewFriendActivity([])}};
+const handleViewFriend=async f=>{setViewFriend(f);setFriendViewTab("overview");try{setViewFriendCigars(await getFriendCigars(f.id));setViewFriendActivity(await getUserActivity(f.id,15));setViewFriendFavs(await getFriendFavorites(f.id))}catch{setViewFriendCigars([]);setViewFriendActivity([]);setViewFriendFavs(new Set())}};
 
 // Load pending request profiles
 useEffect(()=>{if(profile?.friendRequestsIn?.length>0)getFriendProfiles(profile.friendRequestsIn).then(setPendingProfiles);else setPendingProfiles([])},[profile?.friendRequestsIn]);
@@ -229,6 +234,20 @@ return(<div style={{background:"#0f0c08",minHeight:"100vh",fontFamily:"'Cormoran
 </div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>{[{icon:"🗄️",label:"In Humidor",value:humidorCigars.length,tab:"humidor"},{icon:"🔥",label:"Smoked",value:cigars.filter(c=>!c.inHumidor).length,tab:"ratings"},{icon:"⭐",label:"Total Rated",value:allRated.length,tab:"ratings"},{icon:"❤️",label:"Favorites",value:favoriteCigars.length,tab:"favorites"}].map(s=><div key={s.label} onClick={()=>{setActiveTab(s.tab);setSearchQuery("")}} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:14,textAlign:"center",cursor:"pointer"}}><span style={{fontSize:22}}>{s.icon}</span><p style={{fontFamily:"'Playfair Display',serif",color:"#D4A754",fontSize:24,margin:"4px 0 2px",fontWeight:700}}>{s.value}</p><p style={{color:"#6b5e4f",fontSize:10,margin:0,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{s.label}</p></div>)}</div>
 {allRated.length>0&&<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16}}><h3 style={{color:"#D4A754",fontSize:15,margin:"0 0 12px"}}>🏆 Top Rated</h3>{[...allRated].sort((a,b)=>getAvgRating(b.ratings)-getAvgRating(a.ratings)).slice(0,3).map((c,i)=><div key={c.id} onClick={()=>setViewCigar(c)} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<2?"1px solid #1e1a14":"none",cursor:"pointer"}}><span style={{color:i===0?"#D4A754":"#6b5e4f",fontSize:18,fontWeight:700,minWidth:24}}>#{i+1}</span><div style={{flex:1}}><p style={{color:"#e8dcc8",fontSize:14,margin:0}}>{c.name}</p><p style={{color:"#6b5e4f",fontSize:12,margin:"2px 0 0"}}>{c.brand}</p></div><span style={{color:"#D4A754",fontSize:16,fontWeight:700}}>{getAvgRating(c.ratings)}</span><span style={{color:"#3a3228",fontSize:14}}>›</span></div>)}</div>}
+{/* Own Activity Feed */}
+{myActivity.length>0&&<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,marginTop:16}}>
+<h3 style={{color:"#D4A754",fontSize:15,margin:"0 0 12px"}}>📋 Recent Activity</h3>
+{myActivity.slice(0,8).map((a,i)=>{
+const date=a.timestamp?new Date(a.timestamp.seconds*1000).toLocaleDateString("en-US",{month:"short",day:"numeric"}):"";
+const icon=a.type==="smoke"?"🔥":a.type==="add_humidor"?"🗄️":a.type==="rate"?"⭐":"❤️";
+const action=a.type==="smoke"?"Smoked":a.type==="add_humidor"?"Added to humidor":a.type==="rate"?"Rated":"Favorited";
+return<div key={a.id||i} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 0",borderBottom:i<myActivity.slice(0,8).length-1?"1px solid #2a2318":"none"}}>
+<span style={{fontSize:16,marginTop:2}}>{icon}</span>
+<div style={{flex:1}}><p style={{color:"#a0927e",fontSize:13,margin:0}}>{action} <strong style={{color:"#e8dcc8"}}>{a.cigarName}</strong></p>
+<p style={{color:"#4a4035",fontSize:11,margin:"2px 0 0"}}>{a.cigarBrand}{date?` • ${date}`:""}</p>
+{a.rating&&a.rating>0&&<div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}><StarRating value={Math.round(a.rating)} readonly size={10}/><span style={{color:"#D4A754",fontSize:11,fontWeight:700}}>{a.rating}</span></div>}
+</div></div>})}
+</div>}
 </div></>}
 
 {/* HUMIDOR */}
@@ -268,13 +287,31 @@ return(<div style={{background:"#0f0c08",minHeight:"100vh",fontFamily:"'Cormoran
 <p style={{color:"#6b5e4f",fontSize:12,margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.1em"}}>Member since {viewFriend.joinDate}</p>
 {viewFriend.bio&&<p style={{color:"#8a7b69",fontSize:13,fontStyle:"italic",margin:"4px 0 0"}}>"{viewFriend.bio}"</p>}
 </div>
-{/* Friend Stats */}
+{/* Friend Stats - Clickable */}
 <div style={{padding:"16px 20px"}}>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
-{[{icon:"🗄️",label:"Humidor",value:viewFriendCigars.filter(c=>c.inHumidor).length},{icon:"🔥",label:"Smoked",value:viewFriendCigars.filter(c=>!c.inHumidor).length},{icon:"⭐",label:"Rated",value:viewFriendCigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0).length},{icon:"❤️",label:"Favorites",value:0}].map(s=><div key={s.label} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:12,textAlign:"center"}}><span style={{fontSize:18}}>{s.icon}</span><p style={{fontFamily:"'Playfair Display',serif",color:"#D4A754",fontSize:20,margin:"2px 0 1px",fontWeight:700}}>{s.value}</p><p style={{color:"#6b5e4f",fontSize:9,margin:0,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{s.label}</p></div>)}
+{[{icon:"🗄️",label:"Humidor",value:viewFriendCigars.filter(c=>c.inHumidor).length,key:"humidor"},{icon:"🔥",label:"Smoked",value:viewFriendCigars.filter(c=>!c.inHumidor).length,key:"smoked"},{icon:"⭐",label:"Rated",value:viewFriendCigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0).length,key:"rated"},{icon:"❤️",label:"Favorites",value:viewFriendFavs.size,key:"favorites"}].map(s=><div key={s.label} onClick={()=>setFriendViewTab(friendViewTab===s.key?"overview":s.key)} style={{background:friendViewTab===s.key?"#2a2318":"#1a1510",border:`1px solid ${friendViewTab===s.key?"#D4A754":"#2a2318"}`,borderRadius:10,padding:12,textAlign:"center",cursor:"pointer",transition:"all 0.2s"}}><span style={{fontSize:18}}>{s.icon}</span><p style={{fontFamily:"'Playfair Display',serif",color:"#D4A754",fontSize:20,margin:"2px 0 1px",fontWeight:700}}>{s.value}</p><p style={{color:"#6b5e4f",fontSize:9,margin:0,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{s.label}</p></div>)}
 </div>
-{/* Friend's Top Rated */}
-{viewFriendCigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0).length>0&&<div style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:12,padding:14,marginBottom:16}}>
+
+{/* Sub-view based on selected tile */}
+{friendViewTab!=="overview"&&<div style={{marginBottom:16}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+<h3 style={{color:"#D4A754",fontSize:14,margin:0}}>{friendViewTab==="humidor"?"🗄️ In Humidor":friendViewTab==="smoked"?"🔥 Smoked":friendViewTab==="rated"?"⭐ Rated":"❤️ Favorites"}</h3>
+<button onClick={()=>setFriendViewTab("overview")} style={{background:"none",border:"none",color:"#6b5e4f",fontSize:12,cursor:"pointer"}}>✕ Close</button>
+</div>
+<div style={{display:"grid",gap:8}}>
+{(friendViewTab==="humidor"?viewFriendCigars.filter(c=>c.inHumidor):friendViewTab==="smoked"?viewFriendCigars.filter(c=>!c.inHumidor):friendViewTab==="rated"?viewFriendCigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0):viewFriendCigars.filter(c=>viewFriendFavs.has(c.id))).map(c=><div key={c.id} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:12}}>
+<h4 style={{color:"#e8dcc8",fontSize:14,margin:"0 0 2px"}}>{c.name}</h4>
+<p style={{color:"#6b5e4f",fontSize:12,margin:0}}>{c.brand}{c.wrapper?` • ${c.wrapper}`:""}</p>
+{c.ratings&&getAvgRating(c.ratings)>0&&<div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}><StarRating value={Math.round(getAvgRating(c.ratings))} readonly size={12}/><span style={{color:"#D4A754",fontSize:12,fontWeight:700}}>{getAvgRating(c.ratings)}</span></div>}
+{c.notes&&<p style={{color:"#8a7b69",fontSize:12,margin:"6px 0 0",fontStyle:"italic"}}>"{c.notes}"</p>}
+</div>)}
+{(friendViewTab==="humidor"?viewFriendCigars.filter(c=>c.inHumidor):friendViewTab==="smoked"?viewFriendCigars.filter(c=>!c.inHumidor):friendViewTab==="rated"?viewFriendCigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0):viewFriendCigars.filter(c=>viewFriendFavs.has(c.id))).length===0&&<p style={{color:"#4a4035",fontSize:13,textAlign:"center",padding:"12px 0"}}>Nothing here yet</p>}
+</div>
+</div>}
+
+{/* Friend's Top Rated - only show in overview */}
+{friendViewTab==="overview"&&viewFriendCigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0).length>0&&<div style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:12,padding:14,marginBottom:16}}>
 <h3 style={{color:"#D4A754",fontSize:14,margin:"0 0 10px"}}>🏆 Top Rated</h3>
 {[...viewFriendCigars].filter(c=>c.ratings&&Object.keys(c.ratings).length>0).sort((a,b)=>getAvgRating(b.ratings)-getAvgRating(a.ratings)).slice(0,3).map((c,i)=><div key={c.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:i<2?"1px solid #2a2318":"none"}}>
 <span style={{color:i===0?"#D4A754":"#6b5e4f",fontSize:16,fontWeight:700,minWidth:22}}>#{i+1}</span>
@@ -282,8 +319,8 @@ return(<div style={{background:"#0f0c08",minHeight:"100vh",fontFamily:"'Cormoran
 <span style={{color:"#D4A754",fontSize:14,fontWeight:700}}>{getAvgRating(c.ratings)}</span>
 </div>)}
 </div>}
-{/* Activity Feed */}
-<div style={{marginBottom:16}}>
+{/* Activity Feed - overview only */}
+{friendViewTab==="overview"&&<div style={{marginBottom:16}}>
 <h3 style={{color:"#D4A754",fontSize:14,margin:"0 0 10px"}}>📋 Recent Activity</h3>
 {viewFriendActivity.length===0?<p style={{color:"#4a4035",fontSize:13,textAlign:"center",padding:"12px 0"}}>No recent activity</p>:viewFriendActivity.slice(0,10).map((a,i)=>{
 const date=a.timestamp?new Date(a.timestamp.seconds*1000).toLocaleDateString("en-US",{month:"short",day:"numeric"}):""
@@ -299,12 +336,12 @@ return<div key={a.id||i} style={{background:"#1a1510",border:"1px solid #2a2318"
 </div>
 </div>
 </div>})}
-</div>
-{/* All Cigars */}
-<details style={{marginBottom:16}}>
+</div>}
+{/* All Cigars - overview only */}
+{friendViewTab==="overview"&&<details style={{marginBottom:16}}>
 <summary style={{color:"#D4A754",fontSize:14,fontWeight:600,cursor:"pointer",padding:"8px 0"}}>View All Cigars ({viewFriendCigars.length})</summary>
 <div style={{display:"grid",gap:8,marginTop:8}}>{viewFriendCigars.map(c=><div key={c.id} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:12}}><h4 style={{color:"#e8dcc8",fontSize:14,margin:"0 0 2px"}}>{c.name}</h4><p style={{color:"#6b5e4f",fontSize:12,margin:0}}>{c.brand}{c.wrapper?` • ${c.wrapper}`:""}{c.inHumidor?"":" • 🔥 Smoked"}</p>{c.ratings&&getAvgRating(c.ratings)>0&&<div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}><StarRating value={Math.round(getAvgRating(c.ratings))} readonly size={12}/><span style={{color:"#D4A754",fontSize:12,fontWeight:700}}>{getAvgRating(c.ratings)}</span></div>}{c.notes&&<p style={{color:"#8a7b69",fontSize:12,margin:"6px 0 0",fontStyle:"italic"}}>"{c.notes}"</p>}</div>)}</div>
-</details>
+</details>}
 {/* Remove Friend */}
 <div style={{paddingTop:12,borderTop:"1px solid #1e1a14"}}><button onClick={()=>{handleRemoveFriend(viewFriend.id);setViewFriend(null)}} style={{width:"100%",background:"transparent",border:"1px solid #3a2020",borderRadius:10,padding:12,color:"#8a4a4a",fontSize:13,fontWeight:600,cursor:"pointer"}}>Remove Friend</button></div>
 </div>
