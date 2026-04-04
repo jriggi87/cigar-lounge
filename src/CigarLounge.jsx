@@ -215,9 +215,28 @@ useEffect(()=>{getUserActivity(uid,15).then(setMyActivity).catch(()=>setMyActivi
 
 const humidorCigars=cigars.filter(c=>c.inHumidor);const allRated=cigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0);const favoriteCigars=cigars.filter(c=>favorites.has(c.id));
 
-const handleAddCigar=async cigar=>{const isEdit=!!editCigar;try{await saveCigar(uid,{...cigar,quantity:cigar.quantity||1,dateAdded:cigar.dateAdded||new Date().toISOString()});if(!isEdit){try{await postActivity(uid,{type:"add_humidor",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id,quantity:cigar.quantity||1,cigarPhoto:cigar.photo||null,cigarNotes:cigar.notes||null,cigarWrapper:cigar.wrapper||null,cigarShape:cigar.shape||null,cigarStrength:cigar.strength||null,cigarRatings:cigar.ratings||null,cigarOrigin:cigar.origin||null,cigarPrice:cigar.price||null,cigarRingGauge:cigar.ringGauge||null,cigarLength:cigar.length||null})}catch{}}setShowAddModal(false);setEditCigar(null)}catch(e){console.error(e);throw e}};
+const handleAddCigar=async cigar=>{const isEdit=!!editCigar;try{await saveCigar(uid,{...cigar,quantity:cigar.quantity||1,dateAdded:cigar.dateAdded||new Date().toISOString()});
+if(!isEdit){try{await postActivity(uid,{type:"add_humidor",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id,quantity:cigar.quantity||1,cigarPhoto:cigar.photo||null,cigarNotes:cigar.notes||null,cigarWrapper:cigar.wrapper||null,cigarShape:cigar.shape||null,cigarStrength:cigar.strength||null,cigarRatings:cigar.ratings||null,cigarOrigin:cigar.origin||null,cigarPrice:cigar.price||null,cigarRingGauge:cigar.ringGauge||null,cigarLength:cigar.length||null})}catch{}}
+else{
+/* If editing a smoked cigar and adding/changing ratings, post a "rate" activity */
+const wasSmoked=editCigar&&!editCigar.inHumidor;
+const hasNewRatings=cigar.ratings&&Object.keys(cigar.ratings).length>0;
+const hadRatingsBefore=editCigar?.ratings&&Object.values(editCigar.ratings).some(v=>v>0);
+if(wasSmoked&&hasNewRatings&&!hadRatingsBefore){try{await postActivity(uid,{type:"rate",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id,rating:getAvgRating(cigar.ratings),cigarPhoto:cigar.photo||null,cigarNotes:cigar.notes||null,cigarWrapper:cigar.wrapper||null,cigarShape:cigar.shape||null,cigarStrength:cigar.strength||null,cigarRatings:cigar.ratings||null,cigarOrigin:cigar.origin||null})}catch{}}
+}
+setShowAddModal(false);setEditCigar(null)}catch(e){console.error(e);throw e}};
 const handleScannedCigar=async(cigar,dest)=>{try{await saveCigar(uid,{...cigar,dateAdded:new Date().toISOString()});if(dest==="favorites")await saveFavoritesToDb(uid,[...favorites,cigar.id]);setShowScanner(false);setScanToast(`${cigar.name} added!`);setTimeout(()=>setScanToast(null),3000)}catch(e){console.error(e)}};
-const handleSmoke=async id=>{const c=cigars.find(x=>x.id===id);if(c)try{const qty=(c.quantity||1);if(qty>1){await saveCigar(uid,{...c,quantity:qty-1})}else{await saveCigar(uid,{...c,inHumidor:false,quantity:0,smokedDate:new Date().toISOString()})}try{await postActivity(uid,{type:"smoke",cigarName:c.name,cigarBrand:c.brand,cigarId:c.id,rating:getAvgRating(c.ratings),cigarPhoto:c.photo||null,cigarNotes:c.notes||null,cigarWrapper:c.wrapper||null,cigarShape:c.shape||null,cigarStrength:c.strength||null,cigarRatings:c.ratings||null,cigarOrigin:c.origin||null})}catch{}}catch(e){console.error(e)}};
+const handleSmoke=async id=>{const c=cigars.find(x=>x.id===id);if(c)try{const qty=(c.quantity||1);
+if(qty>1){
+/* Create a new separate smoked cigar entry and decrement the humidor copy */
+const smokedCopy={...c,id:generateId(),inHumidor:false,quantity:1,smokedDate:new Date().toISOString(),ratings:{},notes:"",photo:c.photo};
+await saveCigar(uid,smokedCopy);
+await saveCigar(uid,{...c,quantity:qty-1,ratings:{},notes:""});
+}else{
+await saveCigar(uid,{...c,inHumidor:false,quantity:1,smokedDate:new Date().toISOString()});
+}
+try{await postActivity(uid,{type:"smoke",cigarName:c.name,cigarBrand:c.brand,cigarId:c.id,rating:getAvgRating(c.ratings),cigarPhoto:c.photo||null,cigarNotes:c.notes||null,cigarWrapper:c.wrapper||null,cigarShape:c.shape||null,cigarStrength:c.strength||null,cigarRatings:c.ratings||null,cigarOrigin:c.origin||null})}catch{}
+}catch(e){console.error(e)}};
 const handleToggleFavorite=async id=>{const n=new Set(favorites);n.has(id)?n.delete(id):n.add(id);try{await saveFavoritesToDb(uid,[...n])}catch(e){console.error(e)}};
 const handleSearchFriends=async()=>{if(!friendSearch.trim())return;setFriendSearching(true);try{const r=await searchUsers(friendSearch.trim());setFriendSearchResults(r.filter(x=>x.id!==uid))}catch{setFriendSearchResults([])}setFriendSearching(false)};
 const handleAddFriend=async fid=>{try{await sendFriendRequest(uid,fid);setFriendSearch("");setFriendSearchResults([]);setScanToast("Friend request sent!");setTimeout(()=>setScanToast(null),3000)}catch{}};
