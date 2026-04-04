@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { auth } from "./firebase";
 import { signOut } from "firebase/auth";
-import { saveCigar, onCigars, setFavorites as saveFavoritesToDb, onFavorites, onUserProfile, updateUserProfile, searchUsers, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend as removeFriendDb, getFriendProfiles, getFriendCigars, getFriendFavorites, postActivity, getFriendsFeed, getUserActivity } from "./database";
+import { saveCigar, onCigars, setFavorites as saveFavoritesToDb, onFavorites, onUserProfile, updateUserProfile, searchUsers, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend as removeFriendDb, getFriendProfiles, getFriendCigars, getFriendFavorites, postActivity, getFriendsFeed, getUserActivity, addReaction } from "./database";
 import CIGAR_DATA, { CIGAR_BRANDS } from "./cigarDatabase";
 
 const RATING_CATEGORIES = [
@@ -103,7 +103,7 @@ return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zInde
 // Cigar Card
 const CigarCard=({cigar,onTap,onFavorite,onSmoke,onShare,showSmoke,isFavorite})=>{const avg=getAvgRating(cigar.ratings);return(<div onClick={()=>onTap?.(cigar)} style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,cursor:"pointer",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,transparent,#D4A754,transparent)"}}/>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{flex:1}}><h3 style={{fontFamily:"'Playfair Display',serif",color:"#e8dcc8",fontSize:16,margin:"0 0 2px",fontWeight:600}}>{cigar.name}</h3><p style={{color:"#8a7b69",fontSize:13,margin:0}}>{cigar.brand}</p></div>
-<div style={{display:"flex",gap:6,alignItems:"center"}}>{onShare&&<button onClick={e=>{e.stopPropagation();onShare(cigar)}} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"2px 4px",color:"#4a4035"}}>↗</button>}{onFavorite&&<button onClick={e=>{e.stopPropagation();onFavorite(cigar.id)}} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,padding:0,color:isFavorite?"#D4A754":"#3a3228"}}>{isFavorite?"★":"☆"}</button>}{showSmoke&&onSmoke&&<button onClick={e=>{e.stopPropagation();onSmoke(cigar.id)}} style={{background:"linear-gradient(135deg,#8B2500,#A0522D)",border:"1px solid #D4A754",borderRadius:8,color:"#D4A754",fontSize:10,padding:"4px 10px",cursor:"pointer",fontWeight:700,textTransform:"uppercase"}}>🔥 Smoke</button>}</div></div>
+<div style={{display:"flex",gap:6,alignItems:"center"}}>{onShare&&<button onClick={e=>{e.stopPropagation();onShare(cigar)}} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"2px 4px",color:"#4a4035"}}>↗</button>}{onFavorite&&<button onClick={e=>{e.stopPropagation();onFavorite(cigar.id)}} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,padding:0,color:isFavorite?"#D4A754":"#3a3228"}}>{isFavorite?"★":"☆"}</button>}{showSmoke&&onSmoke&&<button onClick={e=>{e.stopPropagation();onSmoke(cigar.id)}} style={{background:"linear-gradient(135deg,#8B2500,#A0522D)",border:"1px solid #D4A754",borderRadius:8,color:"#D4A754",fontSize:10,padding:"4px 10px",cursor:"pointer",fontWeight:700,textTransform:"uppercase"}}>🔥 Smoke{(cigar.quantity||1)>1?` (${cigar.quantity})`:""}</button>}</div></div>
 <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>{cigar.wrapper&&<Tag label={cigar.wrapper}/>}{cigar.shape&&<Tag label={cigar.shape}/>}{cigar.strength&&<Tag label={cigar.strength}/>}</div>
 {cigar.ratings&&avg>0&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:10}}><StarRating value={Math.round(avg)} readonly size={14}/><span style={{color:"#D4A754",fontSize:15,fontWeight:700}}>{avg}</span></div>}
 {cigar.photo&&<div style={{marginTop:10,borderRadius:8,overflow:"hidden",maxHeight:120}}><img src={cigar.photo} alt="" style={{width:"100%",objectFit:"cover",borderRadius:8}}/></div>}
@@ -111,7 +111,8 @@ const CigarCard=({cigar,onTap,onFavorite,onSmoke,onShare,showSmoke,isFavorite})=
 
 // Cigar Modal with autocomplete, loading state, error handling, image crop
 const CigarModal=({cigar,onClose,onSave,mode="add"})=>{
-const[form,setForm]=useState({name:cigar?.name||"",brand:cigar?.brand||"",wrapper:cigar?.wrapper||"",shape:cigar?.shape||"",strength:cigar?.strength||"",ringGauge:cigar?.ringGauge||"",length:cigar?.length||"",origin:cigar?.origin||"",price:cigar?.price||"",notes:cigar?.notes||"",photo:cigar?.photo||null,ratings:cigar?.ratings||{},inHumidor:cigar?.inHumidor??true});
+const[form,setForm]=useState({name:cigar?.name||"",brand:cigar?.brand||"",wrapper:cigar?.wrapper||"",shape:cigar?.shape||"",strength:cigar?.strength||"",ringGauge:cigar?.ringGauge||"",length:cigar?.length||"",origin:cigar?.origin||"",price:cigar?.price||"",notes:cigar?.notes||"",photo:cigar?.photo||null,ratings:cigar?.ratings||{},inHumidor:cigar?.inHumidor??true,quantity:cigar?.quantity||1});
+const[multipleMode,setMultipleMode]=useState((cigar?.quantity||1)>1);
 const[saving,setSaving]=useState(false);const[error,setError]=useState(null);const[cropImage,setCropImage]=useState(null);const fileRef=useRef();
 const[brandSuggestions,setBrandSuggestions]=useState([]);const[showBrandSuggestions,setShowBrandSuggestions]=useState(false);
 const[suggestions,setSuggestions]=useState([]);const[showSuggestions,setShowSuggestions]=useState(false);const sugRef=useRef(null);
@@ -166,6 +167,15 @@ return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zInde
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}><div><label style={lS}>Wrapper</label><select style={iS} value={form.wrapper} onChange={e=>setForm(f=>({...f,wrapper:e.target.value}))}><option value="">Select...</option>{WRAPPER_TYPES.map(w=><option key={w}>{w}</option>)}</select></div><div><label style={lS}>Shape</label><select style={iS} value={form.shape} onChange={e=>setForm(f=>({...f,shape:e.target.value}))}><option value="">Select...</option>{SHAPES.map(s=><option key={s}>{s}</option>)}</select></div></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}><div><label style={lS}>Strength</label><select style={iS} value={form.strength} onChange={e=>setForm(f=>({...f,strength:e.target.value}))}><option value="">Select...</option>{STRENGTH_LEVELS.map(s=><option key={s}>{s}</option>)}</select></div><div><label style={lS}>Ring Gauge</label><input style={iS} type="number" value={form.ringGauge} onChange={e=>setForm(f=>({...f,ringGauge:e.target.value}))} placeholder="52"/></div><div><label style={lS}>Length</label><input style={iS} value={form.length} onChange={e=>setForm(f=>({...f,length:e.target.value}))} placeholder='6"'/></div></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}><div><label style={lS}>Origin</label><input style={iS} value={form.origin} onChange={e=>setForm(f=>({...f,origin:e.target.value}))} placeholder="Nicaragua"/></div><div><label style={lS}>Price ($)</label><input style={iS} type="number" step="0.01" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))} placeholder="15.00"/></div></div>
+{/* Quantity */}
+<div style={{display:"flex",alignItems:"center",gap:12,padding:"8px 0"}}>
+<div onClick={()=>{setMultipleMode(!multipleMode);if(multipleMode)setForm(f=>({...f,quantity:1}))}} style={{width:22,height:22,borderRadius:6,border:`2px solid ${multipleMode?"#D4A754":"#2a2318"}`,background:multipleMode?"#D4A754":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+{multipleMode&&<span style={{color:"#0f0c08",fontSize:14,fontWeight:700}}>✓</span>}
+</div>
+<span style={{color:"#a0927e",fontSize:13}}>{mode==="edit"?"Multiple in humidor":"Adding multiple"}</span>
+{multipleMode&&<input style={{...iS,width:70,textAlign:"center",padding:"8px 10px"}} type="number" min="1" value={form.quantity} onChange={e=>setForm(f=>({...f,quantity:Math.max(1,parseInt(e.target.value)||1)}))}/>}
+{multipleMode&&<span style={{color:"#6b5e4f",fontSize:12}}>cigars</span>}
+</div>
 </div>
 <div style={{marginBottom:20}}><h3 style={{color:"#D4A754",fontSize:16,marginBottom:14}}>Rating System</h3><div style={{display:"grid",gap:14}}>{RATING_CATEGORIES.map(cat=><div key={cat.key} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:"10px 14px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{color:"#a0927e",fontSize:13,fontWeight:700}}>{cat.icon} {cat.label}</span><span style={{color:"#D4A754",fontSize:14,fontWeight:700}}>{form.ratings[cat.key]||"—"}/10</span></div><StarRating value={form.ratings[cat.key]||0} onChange={val=>setForm(f=>({...f,ratings:{...f.ratings,[cat.key]:val}}))} size={18}/></div>)}</div></div>
 <div style={{marginBottom:24}}><label style={lS}>Tasting Notes</label><textarea style={{...iS,minHeight:100,resize:"vertical"}} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Describe flavor, aroma, draw..."/></div>
@@ -192,18 +202,22 @@ const[viewFriendFavs,setViewFriendFavs]=useState(new Set());
 const[pendingProfiles,setPendingProfiles]=useState([]);const[searchQuery,setSearchQuery]=useState("");const[editProfile,setEditProfile]=useState(false);const[friendSearch,setFriendSearch]=useState("");const[friendSearchResults,setFriendSearchResults]=useState([]);const[friendSearching,setFriendSearching]=useState(false);const[scanToast,setScanToast]=useState(null);const[loading,setLoading]=useState(true);const[cropProfileImage,setCropProfileImage]=useState(null);
 const[myActivity,setMyActivity]=useState([]);
 const[friendViewTab,setFriendViewTab]=useState("overview");
-const[ratingFilter,setRatingFilter]=useState("all");const profilePhotoRef=useRef(null);const uid=user.uid;
+const[ratingFilter,setRatingFilter]=useState("all");
+const[socialFeed,setSocialFeed]=useState([]);const[socialLoading,setSocialLoading]=useState(false);
+const[showFriendsList,setShowFriendsList]=useState(false);
+const[expandedPost,setExpandedPost]=useState(null);
+const profilePhotoRef=useRef(null);const uid=user.uid;
 
 useEffect(()=>{const u=[];u.push(onUserProfile(uid,p=>{setProfile(p);setLoading(false)}));u.push(onCigars(uid,setCigars));u.push(onFavorites(uid,setFavoritesState));return()=>u.forEach(x=>x())},[uid]);
-useEffect(()=>{if(profile?.friends?.length>0)getFriendProfiles(profile.friends).then(setFriendProfiles);else setFriendProfiles([])},[profile?.friends]);
+useEffect(()=>{if(profile?.friends?.length>0){getFriendProfiles(profile.friends).then(setFriendProfiles);setSocialLoading(true);getFriendsFeed(profile.friends,10).then(f=>{setSocialFeed(f);setSocialLoading(false)}).catch(()=>setSocialLoading(false))}else{setFriendProfiles([]);setSocialFeed([])}},[profile?.friends]);
 // Load own activity
 useEffect(()=>{getUserActivity(uid,15).then(setMyActivity).catch(()=>setMyActivity([]))},[cigars]);
 
 const humidorCigars=cigars.filter(c=>c.inHumidor);const allRated=cigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0);const favoriteCigars=cigars.filter(c=>favorites.has(c.id));
 
-const handleAddCigar=async cigar=>{try{await saveCigar(uid,{...cigar,dateAdded:cigar.dateAdded||new Date().toISOString()});try{await postActivity(uid,{type:"add_humidor",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id})}catch{}setShowAddModal(false);setEditCigar(null)}catch(e){console.error(e);throw e}};
+const handleAddCigar=async cigar=>{const isEdit=!!editCigar;try{await saveCigar(uid,{...cigar,quantity:cigar.quantity||1,dateAdded:cigar.dateAdded||new Date().toISOString()});if(!isEdit){try{await postActivity(uid,{type:"add_humidor",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id,quantity:cigar.quantity||1,cigarPhoto:cigar.photo||null,cigarNotes:cigar.notes||null,cigarWrapper:cigar.wrapper||null,cigarShape:cigar.shape||null,cigarStrength:cigar.strength||null,cigarRatings:cigar.ratings||null,cigarOrigin:cigar.origin||null,cigarPrice:cigar.price||null,cigarRingGauge:cigar.ringGauge||null,cigarLength:cigar.length||null})}catch{}}setShowAddModal(false);setEditCigar(null)}catch(e){console.error(e);throw e}};
 const handleScannedCigar=async(cigar,dest)=>{try{await saveCigar(uid,{...cigar,dateAdded:new Date().toISOString()});if(dest==="favorites")await saveFavoritesToDb(uid,[...favorites,cigar.id]);setShowScanner(false);setScanToast(`${cigar.name} added!`);setTimeout(()=>setScanToast(null),3000)}catch(e){console.error(e)}};
-const handleSmoke=async id=>{const c=cigars.find(x=>x.id===id);if(c)try{await saveCigar(uid,{...c,inHumidor:false,smokedDate:new Date().toISOString()});try{await postActivity(uid,{type:"smoke",cigarName:c.name,cigarBrand:c.brand,cigarId:c.id,rating:getAvgRating(c.ratings)})}catch{}}catch(e){console.error(e)}};
+const handleSmoke=async id=>{const c=cigars.find(x=>x.id===id);if(c)try{const qty=(c.quantity||1);if(qty>1){await saveCigar(uid,{...c,quantity:qty-1})}else{await saveCigar(uid,{...c,inHumidor:false,quantity:0,smokedDate:new Date().toISOString()})}try{await postActivity(uid,{type:"smoke",cigarName:c.name,cigarBrand:c.brand,cigarId:c.id,rating:getAvgRating(c.ratings),cigarPhoto:c.photo||null,cigarNotes:c.notes||null,cigarWrapper:c.wrapper||null,cigarShape:c.shape||null,cigarStrength:c.strength||null,cigarRatings:c.ratings||null,cigarOrigin:c.origin||null})}catch{}}catch(e){console.error(e)}};
 const handleToggleFavorite=async id=>{const n=new Set(favorites);n.has(id)?n.delete(id):n.add(id);try{await saveFavoritesToDb(uid,[...n])}catch(e){console.error(e)}};
 const handleSearchFriends=async()=>{if(!friendSearch.trim())return;setFriendSearching(true);try{const r=await searchUsers(friendSearch.trim());setFriendSearchResults(r.filter(x=>x.id!==uid))}catch{setFriendSearchResults([])}setFriendSearching(false)};
 const handleAddFriend=async fid=>{try{await sendFriendRequest(uid,fid);setFriendSearch("");setFriendSearchResults([]);setScanToast("Friend request sent!");setTimeout(()=>setScanToast(null),3000)}catch{}};
@@ -217,7 +231,7 @@ const handleUpdateProfile=async data=>{try{await updateUserProfile(uid,data)}cat
 const handleProfilePhoto=e=>{const f=e.target.files[0];if(f){const r=new FileReader();r.onload=ev=>setCropProfileImage(ev.target.result);r.readAsDataURL(f)}};
 const handleProfileCropSave=async url=>{const c=await compressProfilePhoto(url);await handleUpdateProfile({photo:c});setCropProfileImage(null)};
 const filtered=list=>{if(!searchQuery)return list;const q=searchQuery.toLowerCase();return list.filter(c=>c.name?.toLowerCase().includes(q)||c.brand?.toLowerCase().includes(q))};
-const tabs=[{id:"profile",label:"Profile",icon:"👤"},{id:"humidor",label:"Humidor",icon:"🗄️"},{id:"ratings",label:"Ratings",icon:"⭐"},{id:"favorites",label:"Favorites",icon:"❤️"},{id:"friends",label:"Friends",icon:"👥"}];
+const tabs=[{id:"profile",label:"Profile",icon:"👤"},{id:"humidor",label:"Humidor",icon:"🗄️"},{id:"ratings",label:"Ratings",icon:"⭐"},{id:"favorites",label:"Favorites",icon:"❤️"},{id:"lounge",label:"Lounge",icon:"👥"}];
 
 if(loading||!profile)return<div style={{background:"#0f0c08",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#D4A754",fontFamily:"'Playfair Display',serif",fontSize:18}}>Loading...</p></div>;
 
@@ -241,7 +255,7 @@ return(<div style={{background:"#0f0c08",minHeight:"100vh",fontFamily:"'Cormoran
 {myActivity.slice(0,8).map((a,i)=>{
 const date=a.timestamp?new Date(a.timestamp.seconds*1000).toLocaleDateString("en-US",{month:"short",day:"numeric"}):"";
 const icon=a.type==="smoke"?"🔥":a.type==="add_humidor"?"🗄️":a.type==="rate"?"⭐":"❤️";
-const action=a.type==="smoke"?"Smoked":a.type==="add_humidor"?"Added to humidor":a.type==="rate"?"Rated":"Favorited";
+const action=a.type==="smoke"?"Smoked":a.type==="add_humidor"?(a.quantity>1?`Added ${a.quantity}x to humidor`:"Added to humidor"):a.type==="rate"?"Rated":"Favorited";
 return<div key={a.id||i} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 0",borderBottom:i<myActivity.slice(0,8).length-1?"1px solid #2a2318":"none"}}>
 <span style={{fontSize:16,marginTop:2}}>{icon}</span>
 <div style={{flex:1}}><p style={{color:"#a0927e",fontSize:13,margin:0}}>{action} <strong style={{color:"#e8dcc8"}}>{a.cigarName}</strong></p>
@@ -268,18 +282,85 @@ return<div key={a.id||i} style={{display:"flex",alignItems:"flex-start",gap:10,p
 {/* FAVORITES */}
 {activeTab==="favorites"&&<><Header title="Favorites" subtitle={`${favoriteCigars.length} cigar${favoriteCigars.length!==1?"s":""}`}/><div style={{padding:"0 20px",display:"grid",gap:12,marginTop:12}}>{favoriteCigars.length===0?<div style={{textAlign:"center",padding:"40px 0"}}><span style={{fontSize:48}}>❤️</span><p style={{color:"#6b5e4f"}}>No favorites yet</p></div>:favoriteCigars.map(c=><CigarCard key={c.id} cigar={c} onTap={setViewCigar} onFavorite={handleToggleFavorite} onShare={setShareCigar} isFavorite/>)}</div></>}
 
-{/* FRIENDS */}
-{activeTab==="friends"&&<><Header title="Cigar Circle" subtitle={`${friendProfiles.length} friend${friendProfiles.length!==1?"s":""}`}/>
-<div style={{padding:"12px 20px"}}><div style={{display:"flex",gap:10}}><input style={{flex:1,background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:"10px 14px",color:"#e8dcc8",fontSize:14,outline:"none"}} placeholder="Search by email..." value={friendSearch} onChange={e=>setFriendSearch(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSearchFriends()}/><button onClick={handleSearchFriends} disabled={friendSearching} style={{background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:10,padding:"0 18px",color:"#0f0c08",fontSize:13,fontWeight:700,cursor:"pointer"}}>{friendSearching?"...":"Search"}</button></div>
-{friendSearchResults.length>0&&<div style={{marginTop:10,display:"grid",gap:8}}>{friendSearchResults.map(r=><div key={r.id} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:12,display:"flex",alignItems:"center",gap:10}}><div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#D4A754,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#0f0c08",fontWeight:700}}>{r.avatar}</div><div style={{flex:1}}><p style={{color:"#e8dcc8",fontSize:14,margin:0}}>{r.name}</p><p style={{color:"#5a5040",fontSize:11,margin:0}}>{r.email}</p></div>{profile.friends?.includes(r.id)?<span style={{color:"#7ab87a",fontSize:11}}>✓ Friends</span>:profile.friendRequestsOut?.includes(r.id)?<span style={{color:"#D4A754",fontSize:11}}>Pending</span>:<button onClick={()=>handleAddFriend(r.id)} style={{background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:8,padding:"6px 14px",color:"#0f0c08",fontSize:12,fontWeight:700,cursor:"pointer"}}>Add</button>}</div>)}</div>}
+{/* SOCIAL LOUNGE */}
+{activeTab==="lounge"&&<><Header title="Social Lounge"/>
+{/* Search bar */}
+<div style={{padding:"12px 20px"}}><div style={{display:"flex",gap:10}}><input style={{flex:1,background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:"10px 14px",color:"#e8dcc8",fontSize:14,outline:"none"}} placeholder="Add friends by email..." value={friendSearch} onChange={e=>setFriendSearch(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSearchFriends()}/><button onClick={handleSearchFriends} disabled={friendSearching} style={{background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:10,padding:"0 18px",color:"#0f0c08",fontSize:13,fontWeight:700,cursor:"pointer"}}>{friendSearching?"...":"Search"}</button></div>
+{friendSearchResults.length>0&&<div style={{marginTop:10,display:"grid",gap:8}}>{friendSearchResults.map(r=><div key={r.id} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:12,display:"flex",alignItems:"center",gap:10}}><div style={{width:36,height:36,borderRadius:"50%",background:r.photo?"none":"linear-gradient(135deg,#D4A754,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#0f0c08",fontWeight:700,overflow:"hidden"}}>{r.photo?<img src={r.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:r.avatar}</div><div style={{flex:1}}><p style={{color:"#e8dcc8",fontSize:14,margin:0}}>{r.name}</p><p style={{color:"#5a5040",fontSize:11,margin:0}}>{r.email}</p></div>{profile.friends?.includes(r.id)?<span style={{color:"#7ab87a",fontSize:11}}>✓ Friends</span>:profile.friendRequestsOut?.includes(r.id)?<span style={{color:"#D4A754",fontSize:11}}>Pending</span>:<button onClick={()=>handleAddFriend(r.id)} style={{background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:8,padding:"6px 14px",color:"#0f0c08",fontSize:12,fontWeight:700,cursor:"pointer"}}>Add</button>}</div>)}</div>}
 </div>
-<div style={{padding:"0 20px",display:"grid",gap:10}}>
-{/* Pending Friend Requests */}
-{profile.friendRequestsIn?.length>0&&<div style={{marginBottom:10}}>
+
+{/* Pending requests */}
+{profile.friendRequestsIn?.length>0&&<div style={{padding:"0 20px",marginBottom:12}}>
 <p style={{color:"#D4A754",fontSize:12,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,margin:"0 0 8px"}}>Friend Requests ({profile.friendRequestsIn.length})</p>
 {profile.friendRequestsIn.map(reqId=>{const rp=pendingProfiles.find(f=>f.id===reqId);return<PendingRequest key={reqId} profile={rp} onAccept={async()=>{try{await acceptFriendRequest(uid,reqId);setScanToast("Friend added!");setTimeout(()=>setScanToast(null),3000)}catch{}}} onDecline={async()=>{try{await declineFriendRequest(uid,reqId)}catch{}}}/> })}
 </div>}
-{friendProfiles.length===0&&!(profile.friendRequestsIn?.length>0)?<div style={{textAlign:"center",padding:"40px 0"}}><span style={{fontSize:48}}>👥</span><p style={{color:"#6b5e4f"}}>No friends yet</p><p style={{color:"#4a4035",fontSize:13}}>Search by email to add friends</p></div>:friendProfiles.map(f=><div key={f.id} onClick={()=>handleViewFriend(f)} style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,cursor:"pointer",display:"flex",alignItems:"center",gap:14}}><div style={{width:46,height:46,borderRadius:"50%",background:f.photo?"none":"linear-gradient(135deg,#D4A754,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#0f0c08",fontWeight:700,flexShrink:0,overflow:"hidden"}}>{f.photo?<img src={f.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:f.avatar}</div><div style={{flex:1}}><h3 style={{color:"#e8dcc8",fontSize:15,margin:0}}>{f.name}</h3><p style={{color:"#6b5e4f",fontSize:12,margin:"2px 0 0"}}>Member since {f.joinDate}</p></div><span style={{color:"#3a3228",fontSize:18}}>›</span></div>)}</div></>}
+
+{/* Friends count - clickable to expand */}
+<div style={{padding:"0 20px",marginBottom:12}}>
+<div onClick={()=>setShowFriendsList(!showFriendsList)} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:"12px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{color:"#a0927e",fontSize:14}}><strong style={{color:"#D4A754"}}>{friendProfiles.length}</strong> {friendProfiles.length===1?"Friend":"Friends"}</span>
+<span style={{color:"#3a3228",fontSize:14,transform:showFriendsList?"rotate(90deg)":"none",transition:"transform 0.2s"}}>›</span>
+</div>
+{showFriendsList&&<div style={{marginTop:8,display:"grid",gap:6}}>
+{friendProfiles.map(f=><div key={f.id} onClick={()=>handleViewFriend(f)} style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:10,padding:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+<div style={{width:38,height:38,borderRadius:"50%",background:f.photo?"none":"linear-gradient(135deg,#D4A754,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#0f0c08",fontWeight:700,flexShrink:0,overflow:"hidden"}}>{f.photo?<img src={f.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:f.avatar}</div>
+<div style={{flex:1}}><p style={{color:"#e8dcc8",fontSize:14,margin:0}}>{f.name}</p></div>
+<span style={{color:"#3a3228",fontSize:14}}>›</span>
+</div>)}
+</div>}
+</div>
+
+{/* Social Feed */}
+<div style={{padding:"0 20px"}}>
+{socialLoading?<div style={{textAlign:"center",padding:"30px 0"}}><p style={{color:"#6b5e4f"}}>Loading feed...</p></div>
+:socialFeed.length===0?<div style={{textAlign:"center",padding:"40px 0"}}><span style={{fontSize:48}}>🔥</span><p style={{color:"#6b5e4f",fontSize:15,marginTop:12}}>{friendProfiles.length===0?"Add friends to see their activity":"No recent activity from friends"}</p></div>
+:socialFeed.map((post,i)=>{
+const date=post.timestamp?new Date(post.timestamp.seconds*1000).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
+const icon=post.type==="smoke"?"🔥":post.type==="add_humidor"?"🗄️":post.type==="rate"?"⭐":"❤️";
+const action=post.type==="smoke"?"smoked":post.type==="add_humidor"?(post.quantity>1?`added ${post.quantity}x to humidor`:"added to humidor"):post.type==="rate"?"rated":"favorited";
+const avg=post.cigarRatings?getAvgRating(post.cigarRatings):post.rating||0;
+const reactions=post.reactions||{};
+const reactionCounts={};
+Object.values(reactions).forEach(e=>{reactionCounts[e]=(reactionCounts[e]||0)+1});
+const myReaction=reactions[uid]||null;
+
+return<div key={post.id+"-"+i} style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:14,marginBottom:12,overflow:"hidden"}}>
+{/* Post header */}
+<div style={{padding:"14px 16px 0",display:"flex",alignItems:"center",gap:10}}>
+<div onClick={e=>{e.stopPropagation();const fp=friendProfiles.find(f=>f.id===post.userId);if(fp)handleViewFriend(fp)}} style={{width:36,height:36,borderRadius:"50%",background:post.userPhoto?"none":"linear-gradient(135deg,#D4A754,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#0f0c08",fontWeight:700,flexShrink:0,overflow:"hidden",cursor:"pointer"}}>{post.userPhoto?<img src={post.userPhoto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:post.userAvatar}</div>
+<div style={{flex:1}}>
+<p style={{color:"#e8dcc8",fontSize:13,margin:0}}><strong>{post.userName}</strong> <span style={{color:"#6b5e4f"}}>{action}</span></p>
+<p style={{color:"#4a4035",fontSize:11,margin:"2px 0 0"}}>{date}</p>
+</div>
+<span style={{fontSize:18}}>{icon}</span>
+</div>
+
+{/* Cigar info - clickable to expand */}
+<div onClick={()=>setExpandedPost(expandedPost===post.id?null:post)} style={{padding:"10px 16px",cursor:"pointer"}}>
+<h4 style={{fontFamily:"'Playfair Display',serif",color:"#D4A754",fontSize:16,margin:"0 0 2px"}}>{post.cigarName}</h4>
+<p style={{color:"#8a7b69",fontSize:12,margin:0}}>{post.cigarBrand}{post.cigarWrapper?` • ${post.cigarWrapper}`:""}{post.cigarShape?` • ${post.cigarShape}`:""}</p>
+{avg>0&&<div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}><StarRating value={Math.round(avg)} readonly size={12}/><span style={{color:"#D4A754",fontSize:13,fontWeight:700}}>{avg}/10</span></div>}
+{post.cigarNotes&&<p style={{color:"#a0927e",fontSize:13,margin:"8px 0 0",lineHeight:1.5,fontStyle:"italic"}}>"{post.cigarNotes}"</p>}
+</div>
+
+{/* Cigar photo */}
+{post.cigarPhoto&&<div style={{padding:"0 16px 10px"}}><div style={{borderRadius:10,overflow:"hidden",maxHeight:200}}><img src={post.cigarPhoto} alt="" style={{width:"100%",objectFit:"cover",display:"block"}}/></div></div>}
+
+{/* Reactions bar */}
+<div style={{padding:"6px 16px 12px",display:"flex",alignItems:"center",gap:6}}>
+{["👍","❤️","🔥"].map(emoji=>{
+const count=reactionCounts[emoji]||0;
+const isActive=myReaction===emoji;
+return<button key={emoji} onClick={async(e)=>{e.stopPropagation();try{await addReaction(post.userId,post.id,uid,emoji);const updated={...post,reactions:{...(post.reactions||{})}};if(updated.reactions[uid]===emoji)delete updated.reactions[uid];else updated.reactions[uid]=emoji;setSocialFeed(prev=>prev.map(p=>p.id===post.id&&p.userId===post.userId?{...p,reactions:updated.reactions}:p))}catch(err){console.error(err)}}} style={{background:isActive?"#2a2318":"transparent",border:`1px solid ${isActive?"#D4A754":"#2a2318"}`,borderRadius:20,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:4,transition:"all 0.2s"}}>
+<span style={{fontSize:14}}>{emoji}</span>
+{count>0&&<span style={{color:isActive?"#D4A754":"#6b5e4f",fontSize:11,fontWeight:600}}>{count}</span>}
+</button>})}
+<span style={{flex:1}}/>
+<span onClick={()=>setExpandedPost(expandedPost===post.id?null:post)} style={{color:"#4a4035",fontSize:11,cursor:"pointer"}}>Tap to view details</span>
+</div>
+</div>})}
+</div>
+</>}
 </div>
 
 {/* MODALS */}
@@ -332,7 +413,7 @@ return<div key={a.id||i} style={{display:"flex",alignItems:"flex-start",gap:10,p
 {viewFriendActivity.length===0?<p style={{color:"#4a4035",fontSize:13,textAlign:"center",padding:"12px 0"}}>No recent activity</p>:viewFriendActivity.slice(0,10).map((a,i)=>{
 const date=a.timestamp?new Date(a.timestamp.seconds*1000).toLocaleDateString("en-US",{month:"short",day:"numeric"}):""
 const icon=a.type==="smoke"?"🔥":a.type==="add_humidor"?"🗄️":a.type==="rate"?"⭐":"❤️";
-const action=a.type==="smoke"?"smoked":a.type==="add_humidor"?"added to humidor":a.type==="rate"?"rated":"favorited";
+const action=a.type==="smoke"?"smoked":a.type==="add_humidor"?(a.quantity>1?`added ${a.quantity}x to humidor`:"added to humidor"):a.type==="rate"?"rated":"favorited";
 return<div key={a.id||i} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:12,marginBottom:8}}>
 <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
 <span style={{fontSize:18,marginTop:2}}>{icon}</span>
@@ -356,5 +437,17 @@ return<div key={a.id||i} style={{background:"#1a1510",border:"1px solid #2a2318"
 {showScanner&&<BarcodeScanner onClose={()=>setShowScanner(false)} onCigarFound={handleScannedCigar}/>}
 {shareCigar&&<ShareModal cigar={shareCigar} onClose={()=>setShareCigar(null)}/>}
 {cropProfileImage&&<ImageCropModal imageUrl={cropProfileImage} onSave={handleProfileCropSave} onClose={()=>setCropProfileImage(null)} isProfile/>}
+{/* Expanded Post Detail */}
+{expandedPost&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.9)",zIndex:250,overflowY:"auto",padding:"20px 0"}} onClick={e=>e.target===e.currentTarget&&setExpandedPost(null)}><div style={{background:"#0f0c08",border:"1px solid #2a2318",borderRadius:16,maxWidth:500,margin:"auto",overflow:"hidden"}}>
+{expandedPost.cigarPhoto&&<div style={{maxHeight:220,overflow:"hidden"}}><img src={expandedPost.cigarPhoto} alt="" style={{width:"100%",objectFit:"cover"}}/></div>}
+<div style={{padding:20}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><h2 style={{fontFamily:"'Playfair Display',serif",color:"#e8dcc8",fontSize:22,margin:0}}>{expandedPost.cigarName}</h2><p style={{color:"#8a7b69",fontSize:14,margin:"4px 0 0"}}>{expandedPost.cigarBrand}</p><p style={{color:"#4a4035",fontSize:12,margin:"4px 0 0"}}>{expandedPost.userName} • {expandedPost.type==="smoke"?"Smoked":"Added to humidor"}</p></div><button onClick={()=>setExpandedPost(null)} style={{background:"none",border:"none",color:"#6b5e4f",fontSize:24,cursor:"pointer"}}>✕</button></div>
+<div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>{expandedPost.cigarWrapper&&<Tag label={`Wrapper: ${expandedPost.cigarWrapper}`}/>}{expandedPost.cigarShape&&<Tag label={expandedPost.cigarShape}/>}{expandedPost.cigarStrength&&<Tag label={expandedPost.cigarStrength}/>}{expandedPost.cigarOrigin&&<Tag label={expandedPost.cigarOrigin}/>}{expandedPost.cigarRingGauge&&<Tag label={`${expandedPost.cigarRingGauge} RG`}/>}{expandedPost.cigarPrice&&<Tag label={`$${Number(expandedPost.cigarPrice).toFixed(2)}`}/>}</div>
+{expandedPost.cigarRatings&&Object.keys(expandedPost.cigarRatings).length>0&&(()=>{const avg=getAvgRating(expandedPost.cigarRatings);return<>
+{avg>0&&<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,marginTop:16,textAlign:"center"}}><p style={{color:"#6b5e4f",fontSize:11,textTransform:"uppercase",letterSpacing:"0.15em",margin:"0 0 6px"}}>Overall Rating</p><span style={{fontFamily:"'Playfair Display',serif",fontSize:40,color:"#D4A754",fontWeight:700}}>{avg}</span><span style={{color:"#6b5e4f",fontSize:18}}>/10</span><div style={{display:"flex",justifyContent:"center",marginTop:8}}><StarRating value={Math.round(avg)} readonly size={18}/></div></div>}
+<div style={{marginTop:16}}><h3 style={{color:"#D4A754",fontSize:14,marginBottom:10}}>Rating Breakdown</h3>{RATING_CATEGORIES.map(cat=>{const v=expandedPost.cigarRatings[cat.key];if(!v)return null;return<div key={cat.key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #1e1a14"}}><span style={{color:"#a0927e",fontSize:13}}>{cat.icon} {cat.label}</span><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:60,height:4,background:"#1e1a14",borderRadius:2,overflow:"hidden"}}><div style={{width:`${v*10}%`,height:"100%",background:"linear-gradient(90deg,#8B6914,#D4A754)",borderRadius:2}}/></div><span style={{color:"#D4A754",fontSize:13,fontWeight:700,minWidth:24,textAlign:"right"}}>{v}</span></div></div>})}</div>
+</>})()}
+{expandedPost.cigarNotes&&<div style={{marginTop:16}}><h3 style={{color:"#D4A754",fontSize:14,marginBottom:8}}>Tasting Notes</h3><p style={{color:"#a0927e",fontSize:14,lineHeight:1.6,margin:0}}>{expandedPost.cigarNotes}</p></div>}
+</div></div></div>}
 <TabBar tabs={tabs} active={activeTab} onChange={t=>{setActiveTab(t);setSearchQuery("")}}/>
 </div>)}

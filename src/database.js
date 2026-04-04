@@ -204,11 +204,26 @@ export async function getFriendsFeed(friendIds, maxPerFriend = 10) {
       });
     } catch {}
   }
-  // Sort by timestamp descending
   allActivity.sort((a, b) => {
     const ta = a.timestamp?.seconds || 0;
     const tb = b.timestamp?.seconds || 0;
     return tb - ta;
   });
-  return allActivity.slice(0, 30);
+  return allActivity.slice(0, 40);
+}
+
+// ─── Reactions ───────────────────────────────────────────────────
+export async function addReaction(ownerUid, activityId, reactorUid, emoji) {
+  const ref = doc(db, "users", ownerUid, "activity", activityId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const data = snap.data();
+  const reactions = data.reactions || {};
+  // Each user can have one reaction per post, toggle off if same emoji
+  if (reactions[reactorUid] === emoji) {
+    delete reactions[reactorUid];
+  } else {
+    reactions[reactorUid] = emoji;
+  }
+  await updateDoc(ref, { reactions });
 }
