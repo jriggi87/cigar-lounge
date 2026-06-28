@@ -45,6 +45,49 @@ Arturo Fuente Chateau Fuente King T|Arturo Fuente|Connecticut|Churchill|Mild-Med
 Arturo Fuente Magnum R 44|Arturo Fuente|Habano|Robusto|Medium-Full|44|5.5"|Dominican Republic|12
 Arturo Fuente Magnum R 52|Arturo Fuente|Habano|Robusto|Medium-Full|52|5.25"|Dominican Republic|14
 Arturo Fuente Magnum R 56|Arturo Fuente|Habano|Gordo|Medium-Full|56|5.625"|Dominican Republic|16
+Arturo Fuente Magnum R Super 60|Arturo Fuente|Habano|Gordo|Medium-Full|60|5.625"|Dominican Republic|18
+Arturo Fuente Añejo No. 46|Arturo Fuente|Connecticut Broadleaf|Corona|Medium-Full|46|5.625"|Dominican Republic|14
+Arturo Fuente Añejo No. 48|Arturo Fuente|Connecticut Broadleaf|Churchill|Medium-Full|48|7"|Dominican Republic|16
+Arturo Fuente Añejo No. 49|Arturo Fuente|Connecticut Broadleaf|Robusto|Medium-Full|49|5.625"|Dominican Republic|13
+Arturo Fuente Añejo No. 50|Arturo Fuente|Connecticut Broadleaf|Robusto|Medium-Full|50|5.5"|Dominican Republic|14
+Arturo Fuente Añejo No. 55|Arturo Fuente|Connecticut Broadleaf|Toro|Medium-Full|55|6"|Dominican Republic|15
+Arturo Fuente Añejo No. 60|Arturo Fuente|Connecticut Broadleaf|Gordo|Medium-Full|60|5.75"|Dominican Republic|16
+Arturo Fuente Añejo No. 77 Shark|Arturo Fuente|Connecticut Broadleaf|Belicoso|Medium-Full|56|5.75"|Dominican Republic|20
+Arturo Fuente Añejo River Valley Rare Earth|Arturo Fuente|Habano|Toro|Medium-Full|52|6"|Dominican Republic|18
+Arturo Fuente Don Carlos Personal Reserve|Arturo Fuente|Cameroon|Robusto|Medium-Full|52|5.75"|Dominican Republic|20
+Arturo Fuente Don Carlos Belicoso|Arturo Fuente|Cameroon|Belicoso|Medium-Full|52|5.5"|Dominican Republic|14
+Arturo Fuente Don Carlos Robusto|Arturo Fuente|Cameroon|Robusto|Medium-Full|50|5"|Dominican Republic|13
+Arturo Fuente Don Carlos No. 3|Arturo Fuente|Cameroon|Corona|Medium-Full|44|5.5"|Dominican Republic|12
+Arturo Fuente Don Carlos No. 4|Arturo Fuente|Cameroon|Corona|Medium-Full|43|5.125"|Dominican Republic|11
+Arturo Fuente Don Carlos Presidente|Arturo Fuente|Cameroon|Churchill|Medium-Full|50|7.5"|Dominican Republic|16
+Arturo Fuente Don Carlos Lancero|Arturo Fuente|Cameroon|Lancero|Medium-Full|38|7.5"|Dominican Republic|15
+Arturo Fuente Don Carlos 90 Años|Arturo Fuente|Corojo|Toro|Medium-Full|54|6"|Dominican Republic|25
+Arturo Fuente Hemingway Classic|Arturo Fuente|Cameroon|Torpedo|Medium|48|7"|Dominican Republic|13
+Arturo Fuente Hemingway Work of Art|Arturo Fuente|Cameroon|Torpedo|Medium|46|4.875"|Dominican Republic|11
+Arturo Fuente Hemingway Signature|Arturo Fuente|Cameroon|Torpedo|Medium|47|6"|Dominican Republic|12
+Arturo Fuente Hemingway Between the Lines|Arturo Fuente|Cameroon|Belicoso|Medium|54|4.5"|Dominican Republic|14
+Arturo Fuente Chateau Fuente Queen B|Arturo Fuente|Connecticut|Belicoso|Mild-Medium|50|5.5"|Dominican Republic|10
+Arturo Fuente Chateau Fuente Sun Grown|Arturo Fuente|Habano|Robusto|Medium|50|4.5"|Dominican Republic|10
+Arturo Fuente 858 Maduro|Arturo Fuente|Maduro|Churchill|Medium-Full|47|6"|Dominican Republic|9
+Arturo Fuente 858 Sun Grown|Arturo Fuente|Habano|Churchill|Medium|47|6"|Dominican Republic|9
+Arturo Fuente Curly Head|Arturo Fuente|Connecticut|Lonsdale|Mild|43|6.5"|Dominican Republic|5
+Arturo Fuente Curly Head Deluxe|Arturo Fuente|Maduro|Lonsdale|Mild-Medium|43|6.5"|Dominican Republic|5
+Arturo Fuente Especiales|Arturo Fuente|Habano|Toro|Mild-Medium|50|6"|Dominican Republic|7
+Arturo Fuente Canones|Arturo Fuente|Connecticut|Gordo|Mild-Medium|52|8.5"|Dominican Republic|12
+Arturo Fuente Destino al Siglo|Arturo Fuente|Habano|Robusto|Full|52|5.25"|Dominican Republic|30
+Arturo Fuente Rare Pink Vintage 1960s|Arturo Fuente|Cameroon|Toro|Medium-Full|52|6"|Dominican Republic|35
+Arturo Fuente Rare Pink Happy Ending|Arturo Fuente|Cameroon|Belicoso|Medium-Full|53|5.5"|Dominican Republic|35
+Fuente Fuente OpusX Robusto|Arturo Fuente|Habano|Robusto|Full|52|5.375"|Dominican Republic|35
+Fuente Fuente OpusX Belicoso XXX|Arturo Fuente|Habano|Belicoso|Full|49|4.875"|Dominican Republic|30
+Fuente Fuente OpusX Super Belicoso|Arturo Fuente|Habano|Belicoso|Full|50|5.5"|Dominican Republic|35
+Fuente Fuente OpusX Double Corona|Arturo Fuente|Habano|Churchill|Full|49|7.625"|Dominican Republic|45
+Fuente Fuente OpusX Forbidden X|Arturo Fuente|Habano|Robusto|Full|48|5.25"|Dominican Republic|40
+Fuente Fuente OpusX Oro Oscuro|Arturo Fuente|Oscuro|Robusto|Full|52|5.375"|Dominican Republic|45
+Fuente Fuente OpusX BBMF|Arturo Fuente|Habano|Gordo|Full|64|6.5"|Dominican Republic|55
+Fuente Fuente OpusX 20th Anniversary|Arturo Fuente|Habano|Belicoso|Full|52|5.75"|Dominican Republic|40
+Fuente Fuente OpusX 25th Aniversario|Arturo Fuente|Habano|Churchill|Full|50|7"|Dominican Republic|50
+Fuente Fuente OpusX Heaven and Earth|Arturo Fuente|Habano|Lancero|Full|44|6.875"|Dominican Republic|40
+Fuente Fuente OpusX ReXilient|Arturo Fuente|Habano|Churchill|Full|49|7"|Dominican Republic|45
 Oliva Serie V Melanio|Oliva|Habano|Toro|Medium-Full|50|6"|Nicaragua|14
 Oliva Serie V Melanio Maduro|Oliva|Maduro|Toro|Full|50|6"|Nicaragua|15
 Oliva Serie V Melanio Robusto|Oliva|Habano|Robusto|Medium-Full|52|5"|Nicaragua|13
@@ -239,6 +282,49 @@ E.P. Carrillo Pledge Sojourn|E.P. Carrillo|Maduro|Gordo|Full|58|6"|Dominican Rep
 E.P. Carrillo New Wave Connecticut|E.P. Carrillo|Connecticut|Toro|Mild-Medium|50|6"|Dominican Republic|9
 E.P. Carrillo Allegiance|E.P. Carrillo|Habano|Toro|Medium-Full|52|6"|Dominican Republic|13
 E.P. Carrillo Allegiance Confidant|E.P. Carrillo|Habano|Toro|Medium-Full|52|6"|Dominican Republic|12
+E.P. Carrillo Allegiance Sidekick|E.P. Carrillo|Habano|Robusto|Medium-Full|50|5"|Dominican Republic|11
+E.P. Carrillo Allegiance Wingman|E.P. Carrillo|Habano|Gordo|Medium-Full|58|6"|Dominican Republic|13
+E.P. Carrillo La Historia Dona Elena|E.P. Carrillo|San Andrés|Robusto|Full|50|6.125"|Dominican Republic|13
+E.P. Carrillo La Historia E-III|E.P. Carrillo|San Andrés|Toro|Full|54|6.875"|Dominican Republic|14
+E.P. Carrillo La Historia El Senador|E.P. Carrillo|San Andrés|Robusto|Full|52|5.375"|Dominican Republic|13
+E.P. Carrillo La Historia Regalias D'Celia|E.P. Carrillo|San Andrés|Gordo|Full|58|5.875"|Dominican Republic|14
+E.P. Carrillo La Historia Silk|E.P. Carrillo|Cameroon|Toro|Medium-Full|50|6"|Dominican Republic|14
+E.P. Carrillo Encore Toro|E.P. Carrillo|Habano|Toro|Medium-Full|52|6.125"|Dominican Republic|14
+E.P. Carrillo Encore Black Toro|E.P. Carrillo|Maduro|Toro|Full|52|6.125"|Dominican Republic|15
+E.P. Carrillo Encore Black Robusto|E.P. Carrillo|Maduro|Robusto|Full|50|5"|Dominican Republic|14
+E.P. Carrillo Pledge Apogee|E.P. Carrillo|Habano|Gordo|Medium-Full|58|6"|Dominican Republic|14
+E.P. Carrillo Pledge of Allegiance 2025|E.P. Carrillo|Habano|Toro|Full|52|6"|Dominican Republic|18
+E.P. Carrillo INCH Natural No. 60|E.P. Carrillo|Ecuadorian|Gordo|Medium|60|5"|Dominican Republic|9
+E.P. Carrillo INCH Natural No. 62|E.P. Carrillo|Ecuadorian|Gordo|Medium|62|5.5"|Dominican Republic|10
+E.P. Carrillo INCH Natural No. 64|E.P. Carrillo|Ecuadorian|Gordo|Medium|64|6"|Dominican Republic|11
+E.P. Carrillo INCH Natural No. 70|E.P. Carrillo|Ecuadorian|Gordo|Medium-Full|70|7"|Dominican Republic|12
+E.P. Carrillo INCH Maduro No. 60|E.P. Carrillo|Maduro|Gordo|Medium-Full|60|5"|Dominican Republic|9
+E.P. Carrillo INCH Maduro No. 62|E.P. Carrillo|Maduro|Gordo|Medium-Full|62|5.5"|Dominican Republic|10
+E.P. Carrillo INCH Maduro No. 64|E.P. Carrillo|Maduro|Gordo|Medium-Full|64|6"|Dominican Republic|11
+E.P. Carrillo INCH Nicaragua No. 60|E.P. Carrillo|Nicaraguan|Gordo|Medium-Full|60|5"|Nicaragua|9
+E.P. Carrillo INCH Nicaragua No. 62|E.P. Carrillo|Nicaraguan|Gordo|Medium-Full|62|5.5"|Nicaragua|10
+E.P. Carrillo INCH Nicaragua No. 64|E.P. Carrillo|Nicaraguan|Gordo|Medium-Full|64|6"|Nicaragua|11
+E.P. Carrillo Seleccion Oscuro|E.P. Carrillo|Oscuro|Robusto|Full|50|5"|Dominican Republic|12
+E.P. Carrillo Seleccion Oscuro Toro|E.P. Carrillo|Oscuro|Toro|Full|52|6"|Dominican Republic|13
+E.P. Carrillo Dusk|E.P. Carrillo|Maduro|Toro|Medium-Full|52|6"|Dominican Republic|8
+E.P. Carrillo New Wave Connecticut Brillante|E.P. Carrillo|Connecticut|Robusto|Mild-Medium|50|5"|Dominican Republic|8
+E.P. Carrillo New Wave Connecticut Divinos|E.P. Carrillo|Connecticut|Corona|Mild-Medium|44|4.875"|Dominican Republic|7
+E.P. Carrillo New Wave Connecticut El Decano|E.P. Carrillo|Connecticut|Gordo|Mild-Medium|54|6"|Dominican Republic|10
+E.P. Carrillo Endure Robusto|E.P. Carrillo|Habano|Robusto|Medium-Full|50|5"|Dominican Republic|12
+E.P. Carrillo Endure Toro|E.P. Carrillo|Habano|Toro|Medium-Full|52|6"|Dominican Republic|13
+E.P. Carrillo Endure Corona Gorda|E.P. Carrillo|Habano|Corona|Medium-Full|46|5.625"|Dominican Republic|12
+E.P. Carrillo Essence Connecticut Toro|E.P. Carrillo|Connecticut|Toro|Mild-Medium|52|6"|Dominican Republic|8
+E.P. Carrillo Essence Connecticut Corona|E.P. Carrillo|Connecticut|Corona|Mild-Medium|44|5.5"|Dominican Republic|7
+E.P. Carrillo Essence Maduro Toro|E.P. Carrillo|Maduro|Toro|Medium-Full|52|6"|Dominican Republic|8
+E.P. Carrillo Essence Sumatra Toro|E.P. Carrillo|Sumatra|Toro|Medium|52|6"|Dominican Republic|8
+E.P. Carrillo Essence Honduras Toro|E.P. Carrillo|Habano|Toro|Medium-Full|52|6"|Honduras|8
+E.P. Carrillo Essence Honduras Robusto|E.P. Carrillo|Habano|Robusto|Medium-Full|50|5"|Honduras|7
+E.P. Carrillo Battleborn Warrior|E.P. Carrillo|Habano|Toro|Full|52|6"|Dominican Republic|12
+E.P. Carrillo 15 Year Anniversary|E.P. Carrillo|Habano|Toro|Medium-Full|52|6"|Dominican Republic|14
+Perez-Carrillo Ascend Saddle|E.P. Carrillo|Ecuadorian|Robusto|Medium-Full|50|5"|Nicaragua|13
+Perez-Carrillo Ascend Ridge|E.P. Carrillo|Ecuadorian|Toro|Medium-Full|52|6"|Nicaragua|14
+Perez-Carrillo Ascend Peak|E.P. Carrillo|Ecuadorian|Gordo|Medium-Full|58|6.25"|Nicaragua|15
+Perez-Carrillo Deep Blue Limited Edition 2026|E.P. Carrillo|Cameroon|Toro|Medium-Full|52|6"|Dominican Republic|18
 Crowned Heads Four Kicks|Crowned Heads|Habano|Toro|Medium|52|6"|Nicaragua|9
 Crowned Heads Four Kicks Maduro|Crowned Heads|Maduro|Toro|Medium-Full|52|6"|Nicaragua|10
 Crowned Heads Jericho Hill|Crowned Heads|Maduro|Toro|Full|52|6"|Nicaragua|10

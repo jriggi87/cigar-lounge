@@ -9,7 +9,7 @@ import { fetchCigarNews } from "./cigarNews";
 const RATING_CATEGORIES = [
   { key: "appearance", label: "Appearance", icon: "👁️" },{ key: "construction", label: "Construction", icon: "🔧" },{ key: "preLight", label: "Pre-Light Draw", icon: "💨" },{ key: "firstThird", label: "First Third", icon: "1️⃣" },{ key: "secondThird", label: "Second Third", icon: "2️⃣" },{ key: "finalThird", label: "Final Third", icon: "3️⃣" },{ key: "burnLine", label: "Burn & Ash", icon: "🔥" },{ key: "flavor", label: "Flavor Profile", icon: "🍂" },{ key: "strength", label: "Strength", icon: "💪" },{ key: "overall", label: "Overall Experience", icon: "⭐" },
 ];
-const WRAPPER_TYPES=["Connecticut","Habano","Maduro","Oscuro","Corojo","Cameroon","Sumatra","Candela"];
+const WRAPPER_TYPES=["Connecticut","Connecticut Broadleaf","Habano","Maduro","Oscuro","Corojo","Criollo","Cameroon","Sumatra","San Andrés","Nicaraguan","Ecuadorian","Brazilian","Mexican","Candela","Natural"];
 const SHAPES=["Robusto","Toro","Churchill","Corona","Lancero","Torpedo","Belicoso","Gordo","Petit Corona","Lonsdale"];
 const STRENGTH_LEVELS=["Mild","Mild-Medium","Medium","Medium-Full","Full"];
 const BARCODE_DATABASE={};
@@ -27,7 +27,7 @@ const calcAchievements=(cigars)=>{
   const originsTried=new Set(cigars.map(c=>c.origin).filter(Boolean));
   const topBrand=Object.entries(brandCounts).sort((a,b)=>b[1]-a[1])[0];
   const has95=rated.some(c=>parseFloat(getAvgRating(c.ratings))>=9.5);
-  const allWrappers=["Connecticut","Habano","Maduro","Oscuro","Corojo","Cameroon","Sumatra","Candela"];
+  const allWrappers=["Connecticut","Habano","Maduro","Oscuro","Corojo","Cameroon","Sumatra","San Andrés"];
   const wrapperCount=allWrappers.filter(w=>wrappersTried.has(w)).length;
   const badges=[
     {id:"first",icon:"🌱",name:"First Light",desc:"Smoked your first cigar",earned:smoked.length>=1},
