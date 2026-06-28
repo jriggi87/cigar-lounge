@@ -16,6 +16,35 @@ const BARCODE_DATABASE={};
 const getAvgRating=(ratings)=>{if(!ratings)return 0;const v=Object.values(ratings).filter(x=>typeof x==="number"&&x>0);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0};
 const generateId=()=>Math.random().toString(36).substr(2,9)+Date.now().toString(36);
 
+// Achievement badge calculator - all derived from the user's cigars
+const calcAchievements=(cigars)=>{
+  const smoked=cigars.filter(c=>!c.inHumidor);
+  const rated=cigars.filter(c=>c.ratings&&Object.values(c.ratings).some(v=>v>0));
+  const brandCounts={};smoked.forEach(c=>{if(c.brand)brandCounts[c.brand]=(brandCounts[c.brand]||0)+1});
+  const wrappersTried=new Set(cigars.map(c=>c.wrapper).filter(Boolean));
+  const originsTried=new Set(cigars.map(c=>c.origin).filter(Boolean));
+  const topBrand=Object.entries(brandCounts).sort((a,b)=>b[1]-a[1])[0];
+  const has95=rated.some(c=>parseFloat(getAvgRating(c.ratings))>=9.5);
+  const allWrappers=["Connecticut","Habano","Maduro","Oscuro","Corojo","Cameroon","Sumatra","Candela"];
+  const wrapperCount=allWrappers.filter(w=>wrappersTried.has(w)).length;
+  const badges=[
+    {id:"first",icon:"🌱",name:"First Light",desc:"Smoked your first cigar",earned:smoked.length>=1},
+    {id:"smoke5",icon:"🔥",name:"Getting Started",desc:"Smoked 5 cigars",earned:smoked.length>=5},
+    {id:"smoke10",icon:"🔥",name:"Regular",desc:"Smoked 10 cigars",earned:smoked.length>=10},
+    {id:"smoke25",icon:"🔥",name:"Aficionado",desc:"Smoked 25 cigars",earned:smoked.length>=25},
+    {id:"smoke50",icon:"🏆",name:"Connoisseur",desc:"Smoked 50 cigars",earned:smoked.length>=50},
+    {id:"rate10",icon:"⭐",name:"Critic",desc:"Rated 10 cigars",earned:rated.length>=10},
+    {id:"brand10",icon:"👑",name:topBrand?`${topBrand[0]} Loyalist`:"Brand Loyalist",desc:topBrand?`Smoked 10 ${topBrand[0]} cigars`:"Smoke 10 of one brand",earned:topBrand&&topBrand[1]>=10},
+    {id:"brand5",icon:"🎖️",name:topBrand?`${topBrand[0]} Fan`:"Brand Fan",desc:topBrand?`Smoked 5 ${topBrand[0]} cigars`:"Smoke 5 of one brand",earned:topBrand&&topBrand[1]>=5},
+    {id:"wrappers",icon:"🍂",name:"Wrapper Explorer",desc:"Tried all 8 wrapper types",earned:wrapperCount>=8},
+    {id:"wrappers4",icon:"🍃",name:"Wrapper Sampler",desc:"Tried 4 wrapper types",earned:wrapperCount>=4},
+    {id:"origins",icon:"🌎",name:"World Traveler",desc:"Cigars from 4+ countries",earned:originsTried.size>=4},
+    {id:"perfect",icon:"💎",name:"Perfectionist",desc:"Rated a cigar 9.5+",earned:has95},
+    {id:"collector",icon:"🗄️",name:"Collector",desc:"15+ cigars in humidor",earned:cigars.filter(c=>c.inHumidor).reduce((s,c)=>s+(c.quantity||1),0)>=15},
+  ];
+  return badges;
+};
+
 // Image compression for Firestore 1MB limit
 const compressImage=(dataUrl,maxW=600,quality=0.5)=>new Promise(resolve=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");let w=img.width,h=img.height;if(w>maxW){h=(maxW/w)*h;w=maxW}if(h>maxW){w=(maxW/h)*w;h=maxW}c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);resolve(c.toDataURL("image/jpeg",quality))};img.onerror=()=>resolve(dataUrl);img.src=dataUrl});
 const compressProfilePhoto=(dataUrl)=>new Promise(resolve=>{const img=new Image();img.onload=()=>{const s=200,c=document.createElement("canvas");c.width=s;c.height=s;const ctx=c.getContext("2d"),m=Math.min(img.width,img.height),sx=(img.width-m)/2,sy=(img.height-m)/2;ctx.drawImage(img,sx,sy,m,m,0,0,s,s);resolve(c.toDataURL("image/jpeg",0.7))};img.onerror=()=>resolve(dataUrl);img.src=dataUrl});
@@ -111,7 +140,7 @@ const CigarCard=({cigar,onTap,onFavorite,onSmoke,onShare,showSmoke,isFavorite})=
 
 // Cigar Modal with autocomplete, loading state, error handling, image crop
 const CigarModal=({cigar,onClose,onSave,mode="add"})=>{
-const[form,setForm]=useState({name:cigar?.name||"",brand:cigar?.brand||"",wrapper:cigar?.wrapper||"",shape:cigar?.shape||"",strength:cigar?.strength||"",ringGauge:cigar?.ringGauge||"",length:cigar?.length||"",origin:cigar?.origin||"",price:cigar?.price||"",notes:cigar?.notes||"",photo:cigar?.photo||null,ratings:cigar?.ratings||{},inHumidor:cigar?.inHumidor??true,quantity:cigar?.quantity||1});
+const[form,setForm]=useState({name:cigar?.name||"",brand:cigar?.brand||"",wrapper:cigar?.wrapper||"",shape:cigar?.shape||"",strength:cigar?.strength||"",ringGauge:cigar?.ringGauge||"",length:cigar?.length||"",origin:cigar?.origin||"",price:cigar?.price||"",notes:cigar?.notes||"",photo:cigar?.photo||null,ratings:cigar?.ratings||{},inHumidor:cigar?.inHumidor??true,quantity:cigar?.quantity||1,drinkPairing:cigar?.drinkPairing||""});
 const[multipleMode,setMultipleMode]=useState((cigar?.quantity||1)>1);
 const[saving,setSaving]=useState(false);const[error,setError]=useState(null);const[cropImage,setCropImage]=useState(null);const fileRef=useRef();
 const[brandSuggestions,setBrandSuggestions]=useState([]);const[showBrandSuggestions,setShowBrandSuggestions]=useState(false);
@@ -178,6 +207,11 @@ return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zInde
 </div>
 </div>
 <div style={{marginBottom:20}}><h3 style={{color:"#D4A754",fontSize:16,marginBottom:14}}>Rating System</h3><div style={{display:"grid",gap:14}}>{RATING_CATEGORIES.map(cat=><div key={cat.key} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:"10px 14px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{color:"#a0927e",fontSize:13,fontWeight:700}}>{cat.icon} {cat.label}</span><span style={{color:"#D4A754",fontSize:14,fontWeight:700}}>{form.ratings[cat.key]||"—"}/10</span></div><StarRating value={form.ratings[cat.key]||0} onChange={val=>setForm(f=>({...f,ratings:{...f.ratings,[cat.key]:val}}))} size={18}/></div>)}</div></div>
+<div style={{marginBottom:16}}><label style={lS}>🥃 What are you drinking?</label>
+<div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
+{[{label:"Whiskey",icon:"🥃"},{label:"Bourbon",icon:"🥃"},{label:"Scotch",icon:"🥃"},{label:"Rum",icon:"🍹"},{label:"Coffee",icon:"☕"},{label:"Beer",icon:"🍺"},{label:"Wine",icon:"🍷"},{label:"Cognac",icon:"🥃"},{label:"Water",icon:"💧"},{label:"Nothing",icon:"🚫"}].map(d=>{const active=form.drinkPairing===d.label;return<button key={d.label} type="button" onClick={()=>setForm(f=>({...f,drinkPairing:active?"":d.label}))} style={{background:active?"linear-gradient(135deg,#D4A754,#B8943F)":"#1a1510",border:`1px solid ${active?"#D4A754":"#2a2318"}`,borderRadius:20,padding:"6px 12px",color:active?"#0f0c08":"#a0927e",fontSize:12,fontWeight:active?700:500,cursor:"pointer",transition:"all 0.15s"}}>{d.icon} {d.label}</button>})}
+</div>
+<input style={iS} value={form.drinkPairing} onChange={e=>setForm(f=>({...f,drinkPairing:e.target.value}))} placeholder="Or type your own..."/></div>
 <div style={{marginBottom:24}}><label style={lS}>Tasting Notes</label><textarea style={{...iS,minHeight:100,resize:"vertical"}} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Describe flavor, aroma, draw..."/></div>
 {error&&<div style={{background:"#2a1515",border:"1px solid #4a2020",borderRadius:8,padding:"10px 14px",marginBottom:12,color:"#c87a7a",fontSize:13}}>{error}</div>}
 <button onClick={handleSave} disabled={saving||!form.name.trim()} style={{width:"100%",background:saving?"#6b5e4f":"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:10,padding:14,color:"#0f0c08",fontSize:15,fontFamily:"'Playfair Display',serif",fontWeight:700,cursor:saving?"wait":"pointer",textTransform:"uppercase",opacity:saving?0.7:1}}>{saving?"Saving...":mode==="edit"?"Update":"Add to Humidor"}</button>
@@ -190,6 +224,7 @@ const CigarDetail=({cigar,onClose,onEdit,onFavorite,onShare,isFavorite})=>{const
 <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>{cigar.wrapper&&<Tag label={`Wrapper: ${cigar.wrapper}`}/>}{cigar.shape&&<Tag label={cigar.shape}/>}{cigar.strength&&<Tag label={cigar.strength}/>}{cigar.origin&&<Tag label={cigar.origin}/>}{cigar.ringGauge&&<Tag label={`${cigar.ringGauge} RG`}/>}{cigar.price&&<Tag label={`$${Number(cigar.price).toFixed(2)}`}/>}</div>
 {avg>0&&<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,marginTop:16,textAlign:"center"}}><p style={{color:"#6b5e4f",fontSize:11,textTransform:"uppercase",letterSpacing:"0.15em",margin:"0 0 6px"}}>Overall Rating</p><span style={{fontFamily:"'Playfair Display',serif",fontSize:40,color:"#D4A754",fontWeight:700}}>{avg}</span><span style={{color:"#6b5e4f",fontSize:18}}>/10</span><div style={{display:"flex",justifyContent:"center",marginTop:8}}><StarRating value={Math.round(avg)} readonly size={18}/></div></div>}
 {cigar.ratings&&Object.keys(cigar.ratings).length>0&&<div style={{marginTop:16}}><h3 style={{color:"#D4A754",fontSize:14,marginBottom:10}}>Breakdown</h3>{RATING_CATEGORIES.map(cat=>{const v=cigar.ratings[cat.key];if(!v)return null;return<div key={cat.key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #1e1a14"}}><span style={{color:"#a0927e",fontSize:13}}>{cat.icon} {cat.label}</span><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:60,height:4,background:"#1e1a14",borderRadius:2,overflow:"hidden"}}><div style={{width:`${v*10}%`,height:"100%",background:"linear-gradient(90deg,#8B6914,#D4A754)",borderRadius:2}}/></div><span style={{color:"#D4A754",fontSize:13,fontWeight:700,minWidth:24,textAlign:"right"}}>{v}</span></div></div>})}</div>}
+{cigar.drinkPairing&&<div style={{marginTop:16}}><h3 style={{color:"#D4A754",fontSize:14,marginBottom:8}}>🥃 Paired With</h3><p style={{color:"#a0927e",fontSize:14,margin:0}}>{cigar.drinkPairing}</p></div>}
 {cigar.notes&&<div style={{marginTop:16}}><h3 style={{color:"#D4A754",fontSize:14,marginBottom:8}}>Tasting Notes</h3><p style={{color:"#a0927e",fontSize:14,lineHeight:1.6,margin:0}}>{cigar.notes}</p></div>}
 <div style={{display:"flex",gap:8,marginTop:20}}><button onClick={()=>onFavorite?.(cigar.id)} style={{flex:1,background:isFavorite?"#2a2318":"transparent",border:"1px solid #2a2318",borderRadius:10,padding:12,color:isFavorite?"#D4A754":"#6b5e4f",fontSize:13,fontWeight:700,cursor:"pointer"}}>{isFavorite?"★ Favorited":"☆ Favorite"}</button><button onClick={()=>onShare?.(cigar)} style={{flex:1,background:"transparent",border:"1px solid #2a2318",borderRadius:10,padding:12,color:"#6b5e4f",fontSize:13,fontWeight:700,cursor:"pointer"}}>↗ Share</button><button onClick={()=>onEdit?.(cigar)} style={{flex:1,background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:10,padding:12,color:"#0f0c08",fontSize:13,fontWeight:700,cursor:"pointer"}}>✎ Edit</button></div>
 </div></div></div>)};
@@ -205,6 +240,8 @@ const[friendViewTab,setFriendViewTab]=useState("overview");
 const[ratingFilter,setRatingFilter]=useState("all");
 const[socialFeed,setSocialFeed]=useState([]);const[socialLoading,setSocialLoading]=useState(false);
 const[showFriendsList,setShowFriendsList]=useState(false);
+const[showHonorEdit,setShowHonorEdit]=useState(false);
+const[viewBadge,setViewBadge]=useState(null);
 const[expandedPost,setExpandedPost]=useState(null);
 const profilePhotoRef=useRef(null);const uid=user.uid;
 
@@ -216,13 +253,13 @@ useEffect(()=>{getUserActivity(uid,15).then(setMyActivity).catch(()=>setMyActivi
 const humidorCigars=cigars.filter(c=>c.inHumidor);const allRated=cigars.filter(c=>c.ratings&&Object.keys(c.ratings).length>0);const favoriteCigars=cigars.filter(c=>favorites.has(c.id));
 
 const handleAddCigar=async cigar=>{const isEdit=!!editCigar;try{await saveCigar(uid,{...cigar,quantity:cigar.quantity||1,dateAdded:cigar.dateAdded||new Date().toISOString()});
-if(!isEdit){try{await postActivity(uid,{type:"add_humidor",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id,quantity:cigar.quantity||1,cigarPhoto:cigar.photo||null,cigarNotes:cigar.notes||null,cigarWrapper:cigar.wrapper||null,cigarShape:cigar.shape||null,cigarStrength:cigar.strength||null,cigarRatings:cigar.ratings||null,cigarOrigin:cigar.origin||null,cigarPrice:cigar.price||null,cigarRingGauge:cigar.ringGauge||null,cigarLength:cigar.length||null})}catch{}}
+if(!isEdit){try{await postActivity(uid,{type:"add_humidor",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id,quantity:cigar.quantity||1,cigarPhoto:cigar.photo||null,cigarNotes:cigar.notes||null,cigarWrapper:cigar.wrapper||null,cigarShape:cigar.shape||null,cigarStrength:cigar.strength||null,cigarRatings:cigar.ratings||null,cigarOrigin:cigar.origin||null,cigarPrice:cigar.price||null,cigarRingGauge:cigar.ringGauge||null,cigarLength:cigar.length||null,cigarDrink:cigar.drinkPairing||null})}catch{}}
 else{
 /* If editing a smoked cigar and adding/changing ratings, post a "rate" activity */
 const wasSmoked=editCigar&&!editCigar.inHumidor;
 const hasNewRatings=cigar.ratings&&Object.keys(cigar.ratings).length>0;
 const hadRatingsBefore=editCigar?.ratings&&Object.values(editCigar.ratings).some(v=>v>0);
-if(wasSmoked&&hasNewRatings&&!hadRatingsBefore){try{await postActivity(uid,{type:"rate",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id,rating:getAvgRating(cigar.ratings),cigarPhoto:cigar.photo||null,cigarNotes:cigar.notes||null,cigarWrapper:cigar.wrapper||null,cigarShape:cigar.shape||null,cigarStrength:cigar.strength||null,cigarRatings:cigar.ratings||null,cigarOrigin:cigar.origin||null})}catch{}}
+if(wasSmoked&&hasNewRatings&&!hadRatingsBefore){try{await postActivity(uid,{type:"rate",cigarName:cigar.name,cigarBrand:cigar.brand,cigarId:cigar.id,rating:getAvgRating(cigar.ratings),cigarPhoto:cigar.photo||null,cigarNotes:cigar.notes||null,cigarWrapper:cigar.wrapper||null,cigarShape:cigar.shape||null,cigarStrength:cigar.strength||null,cigarRatings:cigar.ratings||null,cigarOrigin:cigar.origin||null,cigarDrink:cigar.drinkPairing||null})}catch{}}
 }
 setShowAddModal(false);setEditCigar(null)}catch(e){console.error(e);throw e}};
 const handleScannedCigar=async(cigar,dest)=>{try{await saveCigar(uid,{...cigar,dateAdded:new Date().toISOString()});if(dest==="favorites")await saveFavoritesToDb(uid,[...favorites,cigar.id]);setShowScanner(false);setScanToast(`${cigar.name} added!`);setTimeout(()=>setScanToast(null),3000)}catch(e){console.error(e)}};
@@ -235,7 +272,7 @@ await saveCigar(uid,{...c,quantity:qty-1,ratings:{},notes:""});
 }else{
 await saveCigar(uid,{...c,inHumidor:false,quantity:1,smokedDate:new Date().toISOString()});
 }
-try{await postActivity(uid,{type:"smoke",cigarName:c.name,cigarBrand:c.brand,cigarId:c.id,rating:getAvgRating(c.ratings),cigarPhoto:c.photo||null,cigarNotes:c.notes||null,cigarWrapper:c.wrapper||null,cigarShape:c.shape||null,cigarStrength:c.strength||null,cigarRatings:c.ratings||null,cigarOrigin:c.origin||null})}catch{}
+try{await postActivity(uid,{type:"smoke",cigarName:c.name,cigarBrand:c.brand,cigarId:c.id,rating:getAvgRating(c.ratings),cigarPhoto:c.photo||null,cigarNotes:c.notes||null,cigarWrapper:c.wrapper||null,cigarShape:c.shape||null,cigarStrength:c.strength||null,cigarRatings:c.ratings||null,cigarOrigin:c.origin||null,cigarDrink:c.drinkPairing||null})}catch{}
 }catch(e){console.error(e)}};
 const handleToggleFavorite=async id=>{const n=new Set(favorites);n.has(id)?n.delete(id):n.add(id);try{await saveFavoritesToDb(uid,[...n])}catch(e){console.error(e)}};
 const handleSearchFriends=async()=>{if(!friendSearch.trim())return;setFriendSearching(true);try{const r=await searchUsers(friendSearch.trim());setFriendSearchResults(r.filter(x=>x.id!==uid))}catch{setFriendSearchResults([])}setFriendSearching(false)};
@@ -266,7 +303,40 @@ return(<div style={{background:"#0f0c08",minHeight:"100vh",fontFamily:"'Cormoran
 {editProfile?<div style={{display:"grid",gap:10,textAlign:"left"}}><input style={{width:"100%",background:"#0f0c08",border:"1px solid #2a2318",borderRadius:8,padding:"8px 12px",color:"#e8dcc8",fontSize:14,outline:"none",boxSizing:"border-box"}} defaultValue={profile.name} onBlur={e=>handleUpdateProfile({name:e.target.value,avatar:e.target.value.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"AF"})}/><textarea style={{width:"100%",background:"#0f0c08",border:"1px solid #2a2318",borderRadius:8,padding:"8px 12px",color:"#e8dcc8",fontSize:14,outline:"none",minHeight:60,resize:"vertical",boxSizing:"border-box"}} defaultValue={profile.bio} onBlur={e=>handleUpdateProfile({bio:e.target.value})}/><button onClick={()=>setEditProfile(false)} style={{background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:8,padding:10,color:"#0f0c08",fontSize:13,fontWeight:700,cursor:"pointer"}}>Done</button></div>:<>
 <h2 style={{fontFamily:"'Playfair Display',serif",color:"#e8dcc8",fontSize:22,margin:"0 0 4px"}}>{profile.name}</h2><p style={{color:"#6b5e4f",fontSize:12,margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.1em"}}>Member since {profile.joinDate}</p><p style={{color:"#5a5040",fontSize:11,margin:"0 0 8px"}}>{profile.email}</p><p style={{color:"#8a7b69",fontSize:14,fontStyle:"italic",margin:"0 0 12px"}}>"{profile.bio}"</p><button onClick={()=>setEditProfile(true)} style={{background:"transparent",border:"1px solid #2a2318",borderRadius:8,padding:"6px 16px",color:"#6b5e4f",fontSize:12,fontWeight:600,cursor:"pointer"}}>Edit Profile</button></>}
 </div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>{[{icon:"🗄️",label:"In Humidor",value:humidorCigars.length,tab:"humidor",filter:"all"},{icon:"🔥",label:"Smoked",value:cigars.filter(c=>!c.inHumidor).length,tab:"ratings",filter:"smoked"},{icon:"⭐",label:"Total Rated",value:allRated.length,tab:"ratings",filter:"all"},{icon:"❤️",label:"Favorites",value:favoriteCigars.length,tab:"favorites",filter:"all"}].map(s=><div key={s.label} onClick={()=>{setActiveTab(s.tab);setSearchQuery("");setRatingFilter(s.filter)}} style={{background:"#1a1510",border:"1px solid #2a2318",borderRadius:10,padding:14,textAlign:"center",cursor:"pointer"}}><span style={{fontSize:22}}>{s.icon}</span><p style={{fontFamily:"'Playfair Display',serif",color:"#D4A754",fontSize:24,margin:"4px 0 2px",fontWeight:700}}>{s.value}</p><p style={{color:"#6b5e4f",fontSize:10,margin:0,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{s.label}</p></div>)}</div>
+{/* Personal Honors */}
+{(()=>{const honorTypes=[{key:"currentFav",label:"Current Favorite",icon:"⭐"},{key:"allTimeFav",label:"All-Time Favorite",icon:"👑"},{key:`fav${new Date().getFullYear()}`,label:`Favorite of ${new Date().getFullYear()}`,icon:"🏆"}];const honors=profile.honors||{};const hasAnyHonor=honorTypes.some(h=>honors[h.key]);const allCigarsForHonor=cigars;return<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,marginBottom:20}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasAnyHonor||showHonorEdit?12:0}}>
+<h3 style={{color:"#D4A754",fontSize:15,margin:0}}>🎖️ Personal Honors</h3>
+<button onClick={()=>setShowHonorEdit(!showHonorEdit)} style={{background:"transparent",border:"1px solid #2a2318",borderRadius:8,padding:"4px 12px",color:"#6b5e4f",fontSize:11,fontWeight:600,cursor:"pointer"}}>{showHonorEdit?"Done":"Edit"}</button>
+</div>
+{showHonorEdit?<div style={{display:"grid",gap:12}}>
+{honorTypes.map(h=><div key={h.key}>
+<label style={{color:"#8a7b69",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:4,display:"block"}}>{h.icon} {h.label}</label>
+<select value={honors[h.key]||""} onChange={e=>handleUpdateProfile({honors:{...honors,[h.key]:e.target.value}})} style={{width:"100%",background:"#1a1510",border:"1px solid #2a2318",borderRadius:8,padding:"10px 12px",color:"#e8dcc8",fontSize:14,outline:"none",boxSizing:"border-box"}}>
+<option value="">None selected</option>
+{allCigarsForHonor.map(c=><option key={c.id} value={c.name}>{c.name}{c.brand?` (${c.brand})`:""}</option>)}
+</select>
+</div>)}
+</div>:hasAnyHonor?<div style={{display:"grid",gap:8}}>
+{honorTypes.filter(h=>honors[h.key]).map(h=><div key={h.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #1e1a14"}}>
+<span style={{fontSize:18}}>{h.icon}</span>
+<div style={{flex:1}}><p style={{color:"#6b5e4f",fontSize:10,margin:0,textTransform:"uppercase",letterSpacing:"0.08em"}}>{h.label}</p><p style={{color:"#e8dcc8",fontSize:14,margin:"2px 0 0",fontWeight:600}}>{honors[h.key]}</p></div>
+</div>)}
+</div>:<p style={{color:"#4a4035",fontSize:13,margin:0,fontStyle:"italic"}}>Tap Edit to name your favorite cigars</p>}
+</div>})()}
+{/* Achievement Badges */}
+{(()=>{const badges=calcAchievements(cigars);const earned=badges.filter(b=>b.earned);const locked=badges.filter(b=>!b.earned);const ordered=[...earned,...locked];return<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,marginBottom:16}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<h3 style={{color:"#D4A754",fontSize:15,margin:0}}>🏅 Achievements</h3>
+<span style={{color:"#6b5e4f",fontSize:12,fontWeight:600}}>{earned.length}/{badges.length}</span>
+</div>
+<div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:4}}>
+{ordered.map(b=><div key={b.id} onClick={()=>setViewBadge(b)} style={{flexShrink:0,width:78,textAlign:"center",cursor:"pointer",opacity:b.earned?1:0.35}}>
+<div style={{width:56,height:56,borderRadius:"50%",background:b.earned?"linear-gradient(135deg,#2a2014,#1a1510)":"#1a1510",border:`2px solid ${b.earned?"#D4A754":"#2a2318"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto 6px",filter:b.earned?"none":"grayscale(1)"}}>{b.earned?b.icon:"🔒"}</div>
+<p style={{color:b.earned?"#a0927e":"#5a5040",fontSize:9,margin:0,lineHeight:1.2,fontWeight:600}}>{b.name}</p>
+</div>)}
+</div>
+</div>})()}
 {allRated.length>0&&<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16}}><h3 style={{color:"#D4A754",fontSize:15,margin:"0 0 12px"}}>🏆 Top Rated</h3>{[...allRated].sort((a,b)=>getAvgRating(b.ratings)-getAvgRating(a.ratings)).slice(0,3).map((c,i)=><div key={c.id} onClick={()=>setViewCigar(c)} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<2?"1px solid #1e1a14":"none",cursor:"pointer"}}><span style={{color:i===0?"#D4A754":"#6b5e4f",fontSize:18,fontWeight:700,minWidth:24}}>#{i+1}</span><div style={{flex:1}}><p style={{color:"#e8dcc8",fontSize:14,margin:0}}>{c.name}</p><p style={{color:"#6b5e4f",fontSize:12,margin:"2px 0 0"}}>{c.brand}</p></div><span style={{color:"#D4A754",fontSize:16,fontWeight:700}}>{getAvgRating(c.ratings)}</span><span style={{color:"#3a3228",fontSize:14}}>›</span></div>)}</div>}
 {/* Own Activity Feed */}
 {myActivity.length>0&&<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,marginTop:16}}>
@@ -359,6 +429,7 @@ return<div key={post.id+"-"+i} style={{background:"linear-gradient(135deg,#1e1a1
 <h4 style={{fontFamily:"'Playfair Display',serif",color:"#D4A754",fontSize:16,margin:"0 0 2px"}}>{post.cigarName}</h4>
 <p style={{color:"#8a7b69",fontSize:12,margin:0}}>{post.cigarBrand}{post.cigarWrapper?` • ${post.cigarWrapper}`:""}{post.cigarShape?` • ${post.cigarShape}`:""}</p>
 {avg>0&&<div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}><StarRating value={Math.round(avg)} readonly size={12}/><span style={{color:"#D4A754",fontSize:13,fontWeight:700}}>{avg}/10</span></div>}
+{post.cigarDrink&&<p style={{color:"#8a7b69",fontSize:12,margin:"6px 0 0"}}>🥃 Paired with {post.cigarDrink}</p>}
 {post.cigarNotes&&<p style={{color:"#a0927e",fontSize:13,margin:"8px 0 0",lineHeight:1.5,fontStyle:"italic"}}>"{post.cigarNotes}"</p>}
 </div>
 
@@ -466,7 +537,18 @@ return<div key={a.id||i} style={{background:"#1a1510",border:"1px solid #2a2318"
 {avg>0&&<div style={{background:"linear-gradient(135deg,#1e1a14,#16120d)",border:"1px solid #2a2318",borderRadius:12,padding:16,marginTop:16,textAlign:"center"}}><p style={{color:"#6b5e4f",fontSize:11,textTransform:"uppercase",letterSpacing:"0.15em",margin:"0 0 6px"}}>Overall Rating</p><span style={{fontFamily:"'Playfair Display',serif",fontSize:40,color:"#D4A754",fontWeight:700}}>{avg}</span><span style={{color:"#6b5e4f",fontSize:18}}>/10</span><div style={{display:"flex",justifyContent:"center",marginTop:8}}><StarRating value={Math.round(avg)} readonly size={18}/></div></div>}
 <div style={{marginTop:16}}><h3 style={{color:"#D4A754",fontSize:14,marginBottom:10}}>Rating Breakdown</h3>{RATING_CATEGORIES.map(cat=>{const v=expandedPost.cigarRatings[cat.key];if(!v)return null;return<div key={cat.key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #1e1a14"}}><span style={{color:"#a0927e",fontSize:13}}>{cat.icon} {cat.label}</span><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:60,height:4,background:"#1e1a14",borderRadius:2,overflow:"hidden"}}><div style={{width:`${v*10}%`,height:"100%",background:"linear-gradient(90deg,#8B6914,#D4A754)",borderRadius:2}}/></div><span style={{color:"#D4A754",fontSize:13,fontWeight:700,minWidth:24,textAlign:"right"}}>{v}</span></div></div>})}</div>
 </>})()}
+{expandedPost.cigarDrink&&<div style={{marginTop:16}}><h3 style={{color:"#D4A754",fontSize:14,marginBottom:8}}>🥃 Paired With</h3><p style={{color:"#a0927e",fontSize:14,margin:0}}>{expandedPost.cigarDrink}</p></div>}
 {expandedPost.cigarNotes&&<div style={{marginTop:16}}><h3 style={{color:"#D4A754",fontSize:14,marginBottom:8}}>Tasting Notes</h3><p style={{color:"#a0927e",fontSize:14,lineHeight:1.6,margin:0}}>{expandedPost.cigarNotes}</p></div>}
 </div></div></div>}
+{/* Badge Detail Popup */}
+{viewBadge&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={e=>e.target===e.currentTarget&&setViewBadge(null)}>
+<div style={{background:"#0f0c08",border:`1px solid ${viewBadge.earned?"#D4A754":"#2a2318"}`,borderRadius:16,padding:28,maxWidth:300,width:"100%",textAlign:"center"}}>
+<div style={{width:80,height:80,borderRadius:"50%",background:viewBadge.earned?"linear-gradient(135deg,#2a2014,#1a1510)":"#1a1510",border:`2px solid ${viewBadge.earned?"#D4A754":"#2a2318"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,margin:"0 auto 16px",filter:viewBadge.earned?"none":"grayscale(1)"}}>{viewBadge.earned?viewBadge.icon:"🔒"}</div>
+<h2 style={{fontFamily:"'Playfair Display',serif",color:viewBadge.earned?"#D4A754":"#8a7b69",fontSize:20,margin:"0 0 8px"}}>{viewBadge.name}</h2>
+<p style={{color:"#a0927e",fontSize:14,margin:"0 0 16px"}}>{viewBadge.desc}</p>
+<p style={{color:viewBadge.earned?"#7ab87a":"#5a5040",fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",margin:"0 0 20px"}}>{viewBadge.earned?"✓ Unlocked":"🔒 Locked"}</p>
+<button onClick={()=>setViewBadge(null)} style={{width:"100%",background:"linear-gradient(135deg,#D4A754,#B8943F)",border:"none",borderRadius:10,padding:12,color:"#0f0c08",fontSize:14,fontWeight:700,cursor:"pointer"}}>Close</button>
+</div>
+</div>}
 <TabBar tabs={tabs} active={activeTab} onChange={t=>{setActiveTab(t);setSearchQuery("")}}/>
 </div>)}
