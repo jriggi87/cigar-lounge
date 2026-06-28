@@ -127,6 +127,48 @@ Rocky Patel Sixty|Rocky Patel|Maduro|Gordo|Full|60|6"|Nicaragua|14
 Rocky Patel A.L.R. Second Edition|Rocky Patel|Habano|Toro|Medium-Full|52|6.5"|Honduras|14
 Rocky Patel Emerald|Rocky Patel|Habano|Robusto|Medium-Full|50|5"|Nicaragua|11
 Rocky Patel DBS|Rocky Patel|Maduro|Toro|Full|52|6.5"|Nicaragua|12
+Rocky Patel Disciple|Rocky Patel|San Andrés|Toro|Medium-Full|52|6.5"|Nicaragua|11
+Rocky Patel Disciple Robusto|Rocky Patel|San Andrés|Robusto|Medium-Full|50|5"|Nicaragua|10
+Rocky Patel Disciple Sixty|Rocky Patel|San Andrés|Gordo|Medium-Full|60|6"|Nicaragua|12
+Rocky Patel Number 6|Rocky Patel|Habano|Toro|Medium|52|6.5"|Honduras|10
+Rocky Patel Number 6 Sixty|Rocky Patel|Habano|Gordo|Medium|60|6"|Honduras|11
+Rocky Patel Java|Rocky Patel|Maduro|Robusto|Mild-Medium|50|5.5"|Nicaragua|7
+Rocky Patel Java Latte|Rocky Patel|Maduro|Robusto|Mild-Medium|50|5.5"|Nicaragua|7
+Rocky Patel Java Mint|Rocky Patel|Maduro|Robusto|Mild-Medium|50|5.5"|Nicaragua|7
+Rocky Patel Java Maduro|Rocky Patel|Maduro|Toro|Mild-Medium|50|6"|Nicaragua|7
+Rocky Patel Olde World Reserve Maduro|Rocky Patel|Maduro|Toro|Medium-Full|52|6.5"|Honduras|11
+Rocky Patel Olde World Reserve Corojo|Rocky Patel|Corojo|Toro|Medium-Full|52|6.5"|Honduras|11
+Rocky Patel Sun Grown|Rocky Patel|Habano|Toro|Medium-Full|52|6.5"|Honduras|9
+Rocky Patel Sun Grown Maduro Robusto|Rocky Patel|Maduro|Robusto|Medium-Full|50|5.5"|Honduras|10
+Rocky Patel The Edge Habano|Rocky Patel|Habano|Toro|Full|52|6"|Honduras|8
+Rocky Patel The Edge Sumatra|Rocky Patel|Sumatra|Toro|Medium-Full|52|6"|Honduras|8
+Rocky Patel The Edge Candela|Rocky Patel|Candela|Toro|Medium|52|6"|Honduras|8
+Rocky Patel The Edge B52 Maduro|Rocky Patel|Maduro|Gordo|Full|60|6"|Honduras|9
+Rocky Patel The Edge Barrel Aged|Rocky Patel|Habano|Toro|Full|52|6"|Honduras|10
+Rocky Patel Vintage 1990 Broadleaf|Rocky Patel|Connecticut Broadleaf|Toro|Medium-Full|52|6.5"|Honduras|10
+Rocky Patel Vintage 1999 Connecticut|Rocky Patel|Connecticut|Robusto|Mild-Medium|50|5.5"|Honduras|9
+Rocky Patel Vintage 2003 Cameroon|Rocky Patel|Cameroon|Toro|Medium|52|6.5"|Honduras|10
+Rocky Patel Vintage 2006 San Andrés|Rocky Patel|San Andrés|Toro|Medium-Full|52|6.5"|Honduras|11
+Rocky Patel Twentieth Anniversary Maduro|Rocky Patel|Maduro|Toro|Medium-Full|52|6.5"|Nicaragua|13
+Rocky Patel Twentieth Anniversary Connecticut|Rocky Patel|Connecticut|Toro|Mild-Medium|52|6.5"|Nicaragua|13
+Rocky Patel Fifty|Rocky Patel|Maduro|Toro|Full|54|6"|Nicaragua|15
+Rocky Patel Quarter Century|Rocky Patel|Habano|Toro|Full|52|6.5"|Honduras|18
+Rocky Patel Super Ligero|Rocky Patel|Habano|Toro|Full|52|6.5"|Nicaragua|13
+Rocky Patel Tabaquero by Hamlet Paredes|Rocky Patel|Habano|Toro|Medium-Full|52|6.5"|Nicaragua|11
+Rocky Patel White Label|Rocky Patel|Connecticut|Toro|Mild|52|6.5"|Honduras|8
+Rocky Patel Gold Label|Rocky Patel|Connecticut|Toro|Mild-Medium|52|6.5"|Honduras|9
+Rocky Patel Freedom Connecticut|Rocky Patel|Connecticut|Toro|Mild-Medium|52|6"|Nicaragua|9
+Rocky Patel Freedom Maduro|Rocky Patel|Maduro|Toro|Medium-Full|52|6"|Nicaragua|9
+Rocky Patel Conviction|Rocky Patel|Habano|Toro|Medium-Full|52|6"|Nicaragua|12
+Rocky Patel Dark Star|Rocky Patel|Maduro|Toro|Full|52|6"|Nicaragua|12
+Rocky Patel Royal Vintage|Rocky Patel|Habano|Toro|Medium|52|6"|Honduras|11
+Rocky Patel American Market Selection|Rocky Patel|Habano|Robusto|Medium-Full|50|5.5"|Honduras|12
+Rocky Patel Cigar Smoking World Championship|Rocky Patel|Habano|Toro|Medium-Full|54|6.5"|Nicaragua|14
+Rocky Patel Winter Collection|Rocky Patel|Maduro|Toro|Medium-Full|52|6"|Nicaragua|11
+Rocky Patel Year of the Dragon 2024|Rocky Patel|Maduro|Toro|Full|54|6"|Nicaragua|16
+Rocky Patel Year of the Snake 2025|Rocky Patel|San Andrés|Toro|Full|54|6"|Nicaragua|16
+Rocky Patel Bones|Rocky Patel|Habano|Toro|Medium-Full|52|6"|Nicaragua|9
+Rocky Patel Catch 22|Rocky Patel|Habano|Robusto|Medium|50|5.5"|Nicaragua|8
 Perdomo Lot 23 Maduro|Perdomo|Maduro|Toro|Medium|50|6"|Nicaragua|7
 Perdomo Lot 23 Connecticut|Perdomo|Connecticut|Toro|Mild|50|6"|Nicaragua|7
 Perdomo Lot 23 Natural|Perdomo|Habano|Toro|Medium|50|6"|Nicaragua|7
@@ -143,6 +185,31 @@ Romeo y Julieta Reserva Real|Romeo y Julieta|Connecticut|Toro|Mild-Medium|48|6"|
 Romeo y Julieta Vintage|Romeo y Julieta|Connecticut|Toro|Mild-Medium|50|6"|Dominican Republic|10
 Romeo y Julieta Habana Reserve|Romeo y Julieta|Habano|Toro|Medium|52|6"|Honduras|9
 Romeo y Julieta Linea de Oro Nobles|Romeo y Julieta|Habano|Robusto|Medium-Full|56|4.875"|Cuba|22
+Romeo y Julieta Reserva Real Nicaragua Robusto|Romeo y Julieta|Habano|Robusto|Medium-Full|50|5"|Nicaragua|9
+Romeo y Julieta Reserva Real Nicaragua Toro|Romeo y Julieta|Habano|Toro|Medium-Full|54|6"|Nicaragua|10
+Romeo y Julieta Reserva Real Nicaragua Magnum|Romeo y Julieta|Habano|Gordo|Medium-Full|60|6"|Nicaragua|11
+Romeo y Julieta Reserva Real Nicaragua Churchill|Romeo y Julieta|Habano|Churchill|Medium-Full|50|7"|Nicaragua|11
+Romeo y Julieta 1875 Nicaragua|Romeo y Julieta|Nicaraguan|Toro|Medium|50|6"|Nicaragua|7
+Romeo y Julieta 1875 Bully|Romeo y Julieta|Connecticut|Robusto|Mild-Medium|50|5"|Dominican Republic|7
+Romeo y Julieta 1875 Bewitched|Romeo y Julieta|Connecticut|Churchill|Mild-Medium|47|7"|Dominican Republic|8
+Romeo y Julieta 1875 Exhibicion No. 3|Romeo y Julieta|Connecticut|Toro|Mild-Medium|50|6"|Dominican Republic|8
+Romeo y Julieta 1875 Reserve Maduro|Romeo y Julieta|Connecticut Broadleaf|Toro|Full|52|6"|Dominican Republic|9
+Romeo y Julieta 1875 Reserve Maduro Robusto|Romeo y Julieta|Connecticut Broadleaf|Robusto|Full|50|5"|Dominican Republic|8
+Romeo y Julieta 1875 Reserve Maduro Belicoso|Romeo y Julieta|Connecticut Broadleaf|Belicoso|Full|52|5.5"|Dominican Republic|9
+Romeo y Julieta Reserva Real Robusto|Romeo y Julieta|Connecticut|Robusto|Mild-Medium|50|5.25"|Dominican Republic|9
+Romeo y Julieta Reserva Real Toro|Romeo y Julieta|Connecticut|Toro|Mild-Medium|52|6.125"|Dominican Republic|10
+Romeo y Julieta Reserva Real Magnum|Romeo y Julieta|Connecticut|Gordo|Mild-Medium|60|6"|Dominican Republic|10
+Romeo y Julieta Eternal Toro|Romeo y Julieta|Nicaraguan|Toro|Medium-Full|54|6"|Nicaragua|12
+Romeo y Julieta Eternal Robusto|Romeo y Julieta|Nicaraguan|Robusto|Medium-Full|52|5"|Nicaragua|11
+Romeo y Julieta Aniversario|Romeo y Julieta|Ecuadorian|Toro|Mild-Medium|54|6"|Dominican Republic|9
+Romeo y Julieta House of Verona|Romeo y Julieta|Habano|Toro|Medium|52|6"|Dominican Republic|10
+Romeo 505 Nicaragua|Romeo y Julieta|Habano|Toro|Full|52|6"|Nicaragua|11
+Romeo by Romeo y Julieta|Romeo y Julieta|Habano|Toro|Medium-Full|54|6"|Nicaragua|11
+Romeo by Romeo y Julieta Añejo|Romeo y Julieta|Maduro|Toro|Full|54|6"|Nicaragua|13
+RyJ by Romeo y Julieta|Romeo y Julieta|Habano|Toro|Medium-Full|52|6"|Honduras|10
+Romeo y Julieta Capulet|Romeo y Julieta|Connecticut|Toro|Mild|52|6"|Dominican Republic|8
+Romeo y Julieta Crafted by AJ Fernandez|Romeo y Julieta|Habano|Toro|Medium|52|6"|Nicaragua|9
+Romeo y Julieta Reserve Real Twins|Romeo y Julieta|Connecticut|Toro|Medium|54|6"|Dominican Republic|11
 Montecristo No. 2|Montecristo|Habano|Torpedo|Medium|52|6.125"|Cuba|22
 Montecristo No. 4|Montecristo|Habano|Corona|Medium|42|5"|Cuba|15
 Montecristo Edmundo|Montecristo|Habano|Robusto|Medium-Full|52|5.25"|Cuba|20
