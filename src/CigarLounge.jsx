@@ -4,6 +4,7 @@ import { signOut } from "firebase/auth";
 import { saveCigar, onCigars, setFavorites as saveFavoritesToDb, onFavorites, onUserProfile, updateUserProfile, searchUsers, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend as removeFriendDb, getFriendProfiles, getFriendCigars, getFriendFavorites, postActivity, getFriendsFeed, getUserActivity, addReaction } from "./database";
 import CIGAR_DATA, { CIGAR_BRANDS } from "./cigarDatabase";
 import { buildPalate, palateSummary, recommendCigars, PALATE_MIN } from "./palate";
+import { fetchCigarNews } from "./cigarNews";
 
 const RATING_CATEGORIES = [
   { key: "appearance", label: "Appearance", icon: "👁️" },{ key: "construction", label: "Construction", icon: "🔧" },{ key: "preLight", label: "Pre-Light Draw", icon: "💨" },{ key: "firstThird", label: "First Third", icon: "1️⃣" },{ key: "secondThird", label: "Second Third", icon: "2️⃣" },{ key: "finalThird", label: "Final Third", icon: "3️⃣" },{ key: "burnLine", label: "Burn & Ash", icon: "🔥" },{ key: "flavor", label: "Flavor Profile", icon: "🍂" },{ key: "strength", label: "Strength", icon: "💪" },{ key: "overall", label: "Overall Experience", icon: "⭐" },
@@ -240,6 +241,7 @@ const[myActivity,setMyActivity]=useState([]);
 const[friendViewTab,setFriendViewTab]=useState("overview");
 const[ratingFilter,setRatingFilter]=useState("all");
 const[socialFeed,setSocialFeed]=useState([]);const[socialLoading,setSocialLoading]=useState(false);
+const[cigarNews,setCigarNews]=useState([]);
 const[showFriendsList,setShowFriendsList]=useState(false);
 const[showHonorEdit,setShowHonorEdit]=useState(false);
 const[viewBadge,setViewBadge]=useState(null);
@@ -248,7 +250,7 @@ const[expandedPost,setExpandedPost]=useState(null);
 const profilePhotoRef=useRef(null);const uid=user.uid;
 
 useEffect(()=>{const u=[];u.push(onUserProfile(uid,p=>{setProfile(p);setLoading(false)}));u.push(onCigars(uid,setCigars));u.push(onFavorites(uid,setFavoritesState));return()=>u.forEach(x=>x())},[uid]);
-useEffect(()=>{if(profile?.friends?.length>0){getFriendProfiles(profile.friends).then(setFriendProfiles);setSocialLoading(true);getFriendsFeed(profile.friends,10).then(f=>{setSocialFeed(f);setSocialLoading(false)}).catch(()=>setSocialLoading(false))}else{setFriendProfiles([]);setSocialFeed([])}},[profile?.friends]);
+useEffect(()=>{if(profile?.friends?.length>0){getFriendProfiles(profile.friends).then(setFriendProfiles);setSocialLoading(true);Promise.all([getFriendsFeed(profile.friends,10),fetchCigarNews(6)]).then(([feed,news])=>{setSocialFeed(feed);setCigarNews(news);setSocialLoading(false)}).catch(()=>setSocialLoading(false))}else{setFriendProfiles([]);setSocialFeed([]);fetchCigarNews(6).then(setCigarNews).catch(()=>{})}},[profile?.friends]);
 // Load own activity
 useEffect(()=>{getUserActivity(uid,15).then(setMyActivity).catch(()=>setMyActivity([]))},[cigars]);
 
@@ -443,8 +445,30 @@ return<div key={a.id||i} style={{display:"flex",alignItems:"flex-start",gap:10,p
 {/* Social Feed */}
 <div style={{padding:"0 20px"}}>
 {socialLoading?<div style={{textAlign:"center",padding:"30px 0"}}><p style={{color:"#6b5e4f"}}>Loading feed...</p></div>
-:socialFeed.length===0?<div style={{textAlign:"center",padding:"40px 0"}}><span style={{fontSize:48}}>🔥</span><p style={{color:"#6b5e4f",fontSize:15,marginTop:12}}>{friendProfiles.length===0?"Add friends to see their activity":"No recent activity from friends"}</p></div>
-:socialFeed.map((post,i)=>{
+:(()=>{
+/* Merge friend activity and news, sorted by timestamp */
+const merged=[...socialFeed,...cigarNews].sort((a,b)=>(b.timestamp?.seconds||0)-(a.timestamp?.seconds||0));
+return merged.length===0?<div style={{textAlign:"center",padding:"40px 0"}}><span style={{fontSize:48}}>🔥</span><p style={{color:"#6b5e4f",fontSize:15,marginTop:12}}>{friendProfiles.length===0?"Add friends to see their activity":"No recent activity"}</p></div>
+:merged.map((post,i)=>{
+/* NEWS POST */
+if(post.type==="news"){
+const newsDate=post.pubDate?new Date(post.pubDate).toLocaleDateString("en-US",{month:"short",day:"numeric"}):"";
+return<div key={post.id+"-"+i} style={{background:"linear-gradient(135deg,#16120d,#1a1510)",border:"1px solid #2a2318",borderRadius:14,marginBottom:12,overflow:"hidden"}}>
+<div style={{padding:"14px 16px"}}>
+<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+<div style={{background:"linear-gradient(135deg,#D4A754,#B8943F)",borderRadius:6,padding:"4px 8px",display:"flex",alignItems:"center",gap:4}}>
+<span style={{fontSize:11,color:"#0f0c08",fontWeight:700}}>📰 NEWS</span>
+</div>
+<span style={{color:"#6b5e4f",fontSize:11}}>{post.source} • {newsDate}</span>
+</div>
+<h4 style={{fontFamily:"'Playfair Display',serif",color:"#e8dcc8",fontSize:15,margin:"0 0 6px",lineHeight:1.4}}>{post.title}</h4>
+{post.description&&<p style={{color:"#a0927e",fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>{post.description}</p>}
+{post.thumbnail&&<div style={{borderRadius:8,overflow:"hidden",marginBottom:10,maxHeight:160}}><img src={post.thumbnail} alt="" style={{width:"100%",objectFit:"cover",display:"block"}} onError={e=>{e.target.style.display="none"}}/></div>}
+<a href={post.link} target="_blank" rel="noopener noreferrer" style={{color:"#D4A754",fontSize:12,fontWeight:600,textDecoration:"none"}}>Read full article →</a>
+</div>
+</div>}
+
+/* FRIEND ACTIVITY POST */
 const date=post.timestamp?new Date(post.timestamp.seconds*1000).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
 const icon=post.type==="smoke"?"🔥":post.type==="add_humidor"?"🗄️":post.type==="rate"?"⭐":post.type==="palate"?"🎯":"❤️";
 const action=post.type==="smoke"?"smoked":post.type==="add_humidor"?(post.quantity>1?`added ${post.quantity}x to humidor`:"added to humidor"):post.type==="rate"?"rated":post.type==="palate"?"shared their palate":"favorited";
@@ -502,7 +526,7 @@ return<button key={emoji} onClick={async(e)=>{e.stopPropagation();try{await addR
 <span style={{flex:1}}/>
 {post.type!=="palate"&&<span onClick={()=>setExpandedPost(expandedPost===post.id?null:post)} style={{color:"#4a4035",fontSize:11,cursor:"pointer"}}>Tap to view details</span>}
 </div>
-</div>})}
+</div>})})()}
 </div>
 </>}
 </div>
