@@ -250,7 +250,10 @@ const[expandedPost,setExpandedPost]=useState(null);
 const profilePhotoRef=useRef(null);const uid=user.uid;
 
 useEffect(()=>{const u=[];u.push(onUserProfile(uid,p=>{setProfile(p);setLoading(false)}));u.push(onCigars(uid,setCigars));u.push(onFavorites(uid,setFavoritesState));return()=>u.forEach(x=>x())},[uid]);
-useEffect(()=>{if(profile?.friends?.length>0){getFriendProfiles(profile.friends).then(setFriendProfiles);setSocialLoading(true);Promise.all([getFriendsFeed(profile.friends,10),fetchCigarNews(6)]).then(([feed,news])=>{setSocialFeed(feed);setCigarNews(news);setSocialLoading(false)}).catch(()=>setSocialLoading(false))}else{setFriendProfiles([]);setSocialFeed([]);fetchCigarNews(6).then(setCigarNews).catch(()=>{})}},[profile?.friends]);
+useEffect(()=>{
+/* Load news independently so it never blocks the friend feed */
+fetchCigarNews(6).then(setCigarNews).catch(()=>setCigarNews([]));
+if(profile?.friends?.length>0){getFriendProfiles(profile.friends).then(setFriendProfiles);setSocialLoading(true);getFriendsFeed(profile.friends,10).then(f=>{setSocialFeed(f);setSocialLoading(false)}).catch(()=>{setSocialFeed([]);setSocialLoading(false)})}else{setFriendProfiles([]);setSocialFeed([])}},[profile?.friends]);
 // Load own activity
 useEffect(()=>{getUserActivity(uid,15).then(setMyActivity).catch(()=>setMyActivity([]))},[cigars]);
 
